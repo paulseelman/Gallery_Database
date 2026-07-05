@@ -153,6 +153,56 @@ def has_media_files(imageset_dir: Path) -> Tuple[int, int]:
     return has_jpg, has_tif
 
 
+def infer_collection_from_rel_path(rel: Path, images_root: Path) -> str:
+    """
+    Determine collection from filesystem layout using the parent of imagesets.
+
+    Expected patterns:
+      - images_root=.../Images:
+        source/collection/imageset/file.json -> collection
+        source/imageset/file.json -> source (fallback)
+      - images_root=.../Images/source:
+        collection/imageset/file.json -> collection
+        imageset/file.json -> source (fallback)
+    """
+    parts = rel.parts
+    if len(parts) >= 3:
+        return parts[-3]
+
+    # If json is directly under an imageset folder at root, use the source
+    # folder name as fallback collection label.
+    root_name = images_root.name.strip()
+    if root_name and root_name != "/":
+        return root_name
+
+    if parts:
+        return parts[0]
+    return "unknown"
+
+
+def canonical_rel_path(json_path: Path, images_root: Path) -> Path:
+    """
+    Build a stable relative path key regardless of ingest root.
+
+    If the absolute path contains an "Images" segment, paths are normalized to
+    be relative to that segment (for example,
+    "Library of Congress/.../item.json" or "Metropolitan/.../item.json").
+    Otherwise fallback to the current images_root-relative path.
+    """
+    try:
+        rel = json_path.relative_to(images_root)
+    except ValueError:
+        rel = json_path
+
+    parts = json_path.parts
+    if "Images" in parts:
+        idx = max(i for i, part in enumerate(parts) if part == "Images")
+        if idx + 1 < len(parts):
+            return Path(*parts[idx + 1 :])
+
+    return rel
+
+
 def collect_terms(payload: Dict[str, Any]) -> Dict[str, List[str]]:
     item = payload.get("item") or {}
 
@@ -189,9 +239,8 @@ def upsert_item(conn: sqlite3.Connection, json_path: Path, images_root: Path) ->
     date_raw = normalize_text(payload.get("date") or item.get("date") or item.get("created_published_date") or item.get("created_published"))
     year_start, year_end = parse_year_range(date_raw)
 
-    rel = json_path.relative_to(images_root)
-    parts = rel.parts
-    collection = parts[0] if len(parts) > 1 else "unknown"
+    rel = canonical_rel_path(json_path, images_root)
+    collection = infer_collection_from_rel_path(rel, images_root)
     imageset_folder = str(rel.parent)
 
     has_jpg, has_tif = has_media_files(json_path.parent)
@@ -296,9 +345,35 @@ def upsert_item(conn: sqlite3.Connection, json_path: Path, images_root: Path) ->
 
 
 def iter_json_files(images_root: Path) -> Iterable[Path]:
+    # Prefer item.json per folder when available, but support collections
+    # where metadata is stored as a numeric basename (for example, 8a12358.json).
+    selected_by_dir: Dict[Path, Path] = {}
+
     for p in images_root.rglob("*.json"):
-        if p.name.lower() == "item.json":
-            yield p
+        parent = p.parent
+        current = selected_by_dir.get(parent)
+        name = p.name.lower()
+
+        if name == "item.json":
+            selected_by_dir[parent] = p
+            continue
+
+        # Some LoC exports store one metadata json in item folders with names
+        # like http_www.loc.gov_item_2017726155/8a12358.json.
+        is_loc_item_dir = "loc.gov_item_" in parent.name.lower()
+        if not is_loc_item_dir:
+            continue
+
+        if current is None:
+            selected_by_dir[parent] = p
+            continue
+
+        # Keep deterministic selection when multiple non-item json files exist.
+        if current.name.lower() != "item.json" and name < current.name.lower():
+            selected_by_dir[parent] = p
+
+    for folder in sorted(selected_by_dir.keys()):
+        yield selected_by_dir[folder]
 
 
 def ingest(images_root: Path, db_path: Path, commit_every: int = 1000) -> None:
