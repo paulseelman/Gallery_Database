@@ -20,6 +20,7 @@ FILTER_KEYS = {
     "collection",
     "year_from",
     "year_to",
+    "any_term",
     "subject",
     "location",
     "tag",
@@ -66,6 +67,7 @@ def default_filter() -> Dict[str, Any]:
         "collection": "",
         "year_from": None,
         "year_to": None,
+        "any_term": "",
         "subject": "",
         "location": "",
         "tag": "",
@@ -81,7 +83,7 @@ def normalize_filter(data: Dict[str, Any]) -> Dict[str, Any]:
     for key, value in data.items():
         if key not in FILTER_KEYS:
             continue
-        if key in {"collection", "subject", "location", "tag", "contributor", "fts"}:
+        if key in {"collection", "any_term", "subject", "location", "tag", "contributor", "fts"}:
             out[key] = str(value or "").strip()
         elif key in {"year_from", "year_to"}:
             if value in (None, ""):
@@ -226,6 +228,17 @@ def build_results_sql(filters: Dict[str, Any]) -> tuple[str, List[Any]]:
     add_term("location", filters.get("location"))
     add_term("tag", filters.get("tag"))
     add_term("contributor", filters.get("contributor"))
+
+    if filters.get("any_term"):
+        joins.append(
+            """
+            JOIN item_terms t_any
+              ON t_any.item_id = i.id
+             AND t_any.term_type IN ('subject', 'location', 'tag', 'contributor', 'format', 'language', 'note')
+             AND t_any.term_value LIKE ?
+            """
+        )
+        join_args.append(f"%{filters['any_term'].lower()}%")
 
     if filters.get("fts"):
         joins.append("JOIN items_fts f ON f.rowid = i.id")
