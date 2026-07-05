@@ -2,10 +2,14 @@
 *.db
 *.db-shm
 *.db-wal
+filter_state.db
+filter_state.db-shm
+filter_state.db-wal
 
 # Python cache
 __pycache__/
 *.pyc
+.venv/
 
 # OS/editor noise
 .DS_Store

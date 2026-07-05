@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LoC Filter Manager</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <header class="topbar">
+    <h1>Library of Congress Filter Manager</h1>
+    <div id="active-meta">Loading active filter...</div>
+  </header>
+
+  <main class="layout">
+    <section class="panel controls">
+      <h2>Filter Controls</h2>
+
+      <label>Collection
+        <select id="collection"></select>
+      </label>
+
+      <div class="row2">
+        <label>Year From
+          <input id="year_from" type="number" placeholder="e.g. 1880">
+        </label>
+        <label>Year To
+          <input id="year_to" type="number" placeholder="e.g. 1890">
+        </label>
+      </div>
+
+      <label>Subject contains
+        <input id="subject" list="subjects_list" placeholder="e.g. istanbul">
+        <datalist id="subjects_list"></datalist>
+      </label>
+
+      <label>Location contains
+        <input id="location" list="locations_list" placeholder="e.g. turkey">
+        <datalist id="locations_list"></datalist>
+      </label>
+
+      <label>Tag contains
+        <input id="tag" list="tags_list" placeholder="e.g. prints and photographs division">
+        <datalist id="tags_list"></datalist>
+      </label>
+
+      <label>Contributor contains
+        <input id="contributor" list="contributors_list" placeholder="e.g. abdullah">
+        <datalist id="contributors_list"></datalist>
+      </label>
+
+      <label>Text search (FTS)
+        <input id="fts" placeholder='e.g. "golden horn" OR barracks'>
+      </label>
+
+      <div class="row2">
+        <label>Result Limit
+          <input id="limit" type="number" min="1" max="500" value="60">
+        </label>
+        <label class="checkbox">
+          <input id="shuffle" type="checkbox">
+          Shuffle
+        </label>
+      </div>
+
+      <div class="actions">
+        <button id="apply_btn" class="btn-primary">Apply</button>
+        <button id="save_btn">Save Active Filter</button>
+        <button id="load_btn">Load Active Filter</button>
+        <button id="clear_btn">Clear</button>
+      </div>
+    </section>
+
+    <section class="panel results">
+      <div class="results-header">
+        <h2>Current Selection</h2>
+        <div id="result_count">0 results</div>
+      </div>
+
+      <div id="active_chips" class="chips"></div>
+
+      <div id="results_grid" class="results-grid"></div>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

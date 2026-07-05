@@ -108,3 +108,38 @@ LIMIT 100;
 - JSON shape varies slightly by collection, so ingestion is defensive and normalizes lists/dicts.
 - Date strings like `[between 1880 and 1893]` are parsed into `year_start=1880`, `year_end=1893`.
 - Only `item.json` files are ingested.
+
+## Web Filter Manager
+
+This project includes a network-accessible filter management web app for controlling and tracking an active database filter.
+
+### Install
+
+```bash
+cd /tank/media/Projects/Gallery_Database
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+```
+
+### Run on Your Network
+
+```bash
+.venv/bin/python webapp.py --db loc_metadata.db --host 0.0.0.0 --port 8080
+```
+
+Open from any device on your LAN:
+
+```text
+http://<your-server-ip>:8080
+```
+
+### API Endpoints
+
+- `GET /api/filter`: read current active filter
+- `PUT /api/filter`: save active filter (JSON body)
+- `POST /api/results`: run ad-hoc query for provided filter
+- `GET /api/results`: run query using saved active filter
+- `GET /api/facets`: top facet values for dropdown/suggestions
+- `GET /api/active-selection`: saved filter + current matching items
+
+`/api/active-selection` is designed to make Raspberry Pi integration simple: your Pi can poll this endpoint, shuffle/display the returned items, and stay synchronized with the UI-managed active filter.
