@@ -248,25 +248,43 @@ def build_results_sql(filters: Dict[str, Any]) -> tuple[str, List[Any]]:
     where_sql = " AND ".join(where) if where else "1=1"
     joins_sql = "\n".join(joins)
 
-    order_sql = "RANDOM()" if filters.get("shuffle") else "COALESCE(i.year_start, 9999), i.title"
+    order_sql = "RANDOM()" if filters.get("shuffle") else "COALESCE(year_start, 9999), title"
 
     sql = f"""
-      SELECT DISTINCT
-        i.item_id,
-        i.title,
-        i.date_raw,
-        i.year_start,
-        i.year_end,
-        i.collection,
-        i.url,
-        i.json_path,
-        i.imageset_folder,
-        i.raw_json
-      FROM items i
-      {joins_sql}
-      WHERE {where_sql}
-      ORDER BY {order_sql}
-      LIMIT ?
+        WITH matched AS (
+            SELECT DISTINCT i.*
+            FROM items i
+            {joins_sql}
+            WHERE {where_sql}
+        ),
+        deduped AS (
+            SELECT
+                m.*,
+                ROW_NUMBER() OVER (
+                    PARTITION BY COALESCE(NULLIF(m.item_id, ''), NULLIF(m.url, ''), m.json_path)
+                    ORDER BY
+                        CASE WHEN m.collection = 'Library of Congress' THEN 1 ELSE 0 END,
+                        CASE WHEN COALESCE(m.collection, '') = '' THEN 1 ELSE 0 END,
+                        LENGTH(COALESCE(m.collection, '')),
+                        m.id
+                ) AS rn
+            FROM matched m
+        )
+        SELECT
+            item_id,
+            title,
+            date_raw,
+            year_start,
+            year_end,
+            collection,
+            url,
+            json_path,
+            imageset_folder,
+            raw_json
+        FROM deduped
+        WHERE rn = 1
+        ORDER BY {order_sql}
+        LIMIT ?
     """
 
     args = join_args + where_args + [filters["limit"]]
