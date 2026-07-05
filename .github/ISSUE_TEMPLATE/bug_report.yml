@@ -1,0 +1,67 @@
+name: Bug report
+description: Report an issue with ingestion, metadata normalization, or query behavior.
+title: "bug: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Please include as much detail as possible.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Where did the bug occur?
+      options:
+        - Ingest command
+        - Stats command
+        - Query command
+        - Database schema
+        - Documentation
+    validations:
+      required: true
+
+  - type: input
+    id: command
+    attributes:
+      label: Command run
+      description: The exact command that triggered the issue.
+      placeholder: python3 loc_metadata_db.py query --db loc_metadata.db --subject istanbul
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      placeholder: Describe what you expected to happen.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      placeholder: Describe what actually happened. Include traceback/output if available.
+    validations:
+      required: true
+
+  - type: textarea
+    id: sample
+    attributes:
+      label: Sample metadata path (if relevant)
+      description: Provide one or more item.json paths that reproduce the issue.
+      placeholder: /tank/media/Images/Library of Congress/collection/.../item.json
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      value: |
+        OS:
+        Python version:
+        SQLite version (if known):
+    validations:
+      required: true

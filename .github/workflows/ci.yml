@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  python-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Syntax check
+        run: python -m py_compile loc_metadata_db.py
+
+      - name: CLI help smoke test
+        run: |
+          python loc_metadata_db.py --help
+          python loc_metadata_db.py ingest --help
+          python loc_metadata_db.py stats --help
+          python loc_metadata_db.py query --help
