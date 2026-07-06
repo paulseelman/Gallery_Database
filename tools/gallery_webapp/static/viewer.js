@@ -7,6 +7,7 @@ let playlist = [];
 let cursor = 0;
 let rotationTimer = null;
 let lastUpdatedAt = null;
+let lastFilterFingerprint = "";
 
 function elem(id) {
   return document.getElementById(id);
@@ -76,6 +77,10 @@ function restartRotation() {
   rotationTimer = setInterval(nextSlide, slideMs);
 }
 
+function filterFingerprint(activeFilter) {
+  return JSON.stringify(activeFilter || {});
+}
+
 async function pollSelection() {
   try {
     const res = await fetch("/api/selection", { cache: "no-store" });
@@ -92,9 +97,12 @@ async function pollSelection() {
       elem("sync_status").textContent += ` | warning: ${data.error}`;
     }
 
-    const shouldRefreshPlaylist = data.updated_at !== lastUpdatedAt;
+    const currentFilterFingerprint = filterFingerprint(data.active_filter);
+    const shouldRefreshPlaylist =
+      data.updated_at !== lastUpdatedAt || currentFilterFingerprint !== lastFilterFingerprint;
     if (shouldRefreshPlaylist) {
       lastUpdatedAt = data.updated_at || null;
+      lastFilterFingerprint = currentFilterFingerprint;
       playlist = normalizeItems(data.items || []);
       cursor = 0;
       restartRotation();

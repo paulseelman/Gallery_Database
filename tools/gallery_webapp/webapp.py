@@ -102,7 +102,9 @@ def get_or_build_collections_payload(db_path: Path, limit: int) -> Dict[str, Any
 
 
 def utc_now_iso() -> str:
-    return dt.datetime.now(dt.UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    # Keep sub-second precision so rapid successive saves always produce a
+    # distinct update marker for polling clients.
+    return dt.datetime.now(dt.UTC).isoformat().replace("+00:00", "Z")
 
 
 def db_conn(db_path: Path) -> sqlite3.Connection:
