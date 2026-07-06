@@ -138,10 +138,19 @@
         </dl>
         <div class="lightbox-actions">
           <a id="lightbox_link" href="#" target="_blank" rel="noreferrer">Open source record</a>
+          <a id="lightbox_json_link" href="#" role="button">JSON</a>
         </div>
       </section>
     </div>
   </aside>
+
+  <div id="json_viewer" class="json-viewer is-hidden" aria-hidden="true" role="dialog" aria-label="Item JSON viewer">
+    <div id="json_viewer_header" class="json-viewer-header">
+      <span class="json-viewer-title">JSON</span>
+      <button id="json_viewer_close" class="json-viewer-close" type="button" aria-label="Close JSON viewer">&#x2715;</button>
+    </div>
+    <pre id="json_viewer_content" class="json-viewer-content"></pre>
+  </div>
 
   <script src="/static/app.js"></script>
 </body>
