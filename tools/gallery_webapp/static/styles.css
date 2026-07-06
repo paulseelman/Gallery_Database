@@ -497,7 +497,7 @@ button:hover {
   height: 100%;
   border: 0;
   padding: 0;
-  background: rgba(7, 7, 8, 0.82);
+  background: #000;
   backdrop-filter: blur(3px);
 }
 
@@ -505,42 +505,51 @@ button:hover {
   position: relative;
   z-index: 1;
   height: 100%;
-  width: min(1360px, 100%);
+  width: 100%;
   margin: 0 auto;
   padding: clamp(0.7rem, 1.2vw, 1.1rem);
   display: grid;
-  grid-template-columns: minmax(0, 2.6fr) minmax(280px, 1fr);
-  gap: 0.85rem;
+  grid-template-columns: minmax(0, 1fr) minmax(170px, 10%);
+  gap: 0.5rem;
+  background: #000;
+  border: 1px solid rgba(220, 197, 157, 0.25);
+  border-radius: 0;
 }
 
 .lightbox-stage {
   margin: 0;
-  border: 1px solid rgba(220, 197, 157, 0.45);
-  border-radius: 12px;
+  border: 0;
+  border-radius: 0;
   overflow: hidden;
-  background: radial-gradient(circle at 16% 14%, #3f3d35 0%, #121212 100%);
+  background: transparent;
   display: grid;
   place-items: center;
+  align-content: center;
+  justify-content: center;
   min-height: 0;
 }
 
 #lightbox_image {
-  width: 100%;
-  height: 100%;
+  width: auto;
+  height: auto;
+  max-width: 100%;
   object-fit: contain;
   max-height: calc(100vh - 2.2rem);
 }
 
 .lightbox-meta {
-  border: 1px solid rgba(220, 197, 157, 0.45);
-  border-radius: 12px;
-  background: linear-gradient(180deg, #171615 0%, #100f0f 100%);
-  color: #f6f1e6;
-  padding: 0.84rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #d9d8d2;
+  padding: 0.56rem 0.52rem;
   display: grid;
-  grid-template-rows: auto auto 1fr auto;
-  gap: 0.62rem;
-  box-shadow: 0 22px 48px rgba(0, 0, 0, 0.36);
+  grid-template-rows: auto auto auto auto;
+  align-content: start;
+  gap: 0.32rem;
+  box-shadow: none;
+  min-width: 0;
+  overflow: auto;
 }
 
 .lightbox-meta h3 {
@@ -556,22 +565,22 @@ button:hover {
   font-size: 0.71rem;
   text-transform: uppercase;
   letter-spacing: 0.036em;
-  color: rgba(240, 227, 200, 0.84);
+  color: #b9b8b2;
 }
 
 .lightbox-facts {
   margin: 0;
-  padding: 0.52rem 0;
+  padding: 0.24rem 0;
   border-top: 1px solid rgba(219, 196, 158, 0.24);
   border-bottom: 1px solid rgba(219, 196, 158, 0.24);
   display: grid;
-  gap: 0.44rem;
+  gap: 0.22rem;
 }
 
 .lightbox-facts div {
   display: grid;
-  grid-template-columns: 98px minmax(0, 1fr);
-  gap: 0.48rem;
+  grid-template-columns: 78px minmax(0, 1fr);
+  gap: 0.26rem;
   align-items: baseline;
 }
 
@@ -580,12 +589,12 @@ button:hover {
   font-size: 0.67rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: rgba(228, 203, 162, 0.74);
+  color: #adaca7;
 }
 
 .lightbox-facts dd {
   margin: 0;
-  font-size: 0.84rem;
+  font-size: 0.74rem;
   line-height: 1.3;
   word-break: break-word;
 }
@@ -598,7 +607,7 @@ button:hover {
 }
 
 .lightbox-actions a {
-  color: #e9cd95;
+  color: #c8c7c1;
   text-decoration: none;
   font-family: "IBM Plex Mono", monospace;
   font-size: 0.69rem;
@@ -655,6 +664,7 @@ button:hover {
     grid-template-rows: minmax(0, 1fr) auto;
     max-height: 100vh;
     padding: 0.62rem;
+    gap: 0.55rem;
   }
 
   #lightbox_image {
