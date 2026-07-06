@@ -10,6 +10,7 @@ const ids = [
   "fts",
   "limit",
   "shuffle",
+  "exclude_portraits",
 ];
 
 function elem(id) {
@@ -29,6 +30,7 @@ function currentFilterFromForm() {
     fts: elem("fts").value.trim(),
     limit: Number(elem("limit").value || 60),
     shuffle: elem("shuffle").checked,
+    exclude_portraits: elem("exclude_portraits").checked,
   };
 }
 
@@ -37,7 +39,7 @@ function applyFilterToForm(filter) {
     if (!(id in filter)) {
       return;
     }
-    if (id === "shuffle") {
+    if (id === "shuffle" || id === "exclude_portraits") {
       elem(id).checked = Boolean(filter[id]);
       return;
     }
@@ -61,6 +63,7 @@ function renderChips(filter) {
     fts: "fts",
     limit: "limit",
     shuffle: "shuffle",
+    exclude_portraits: "exclude portraits",
   };
 
   Object.entries(filter).forEach(([key, value]) => {
@@ -188,6 +191,7 @@ function clearForm() {
     fts: "",
     limit: 60,
     shuffle: false,
+    exclude_portraits: false,
   });
 }
 
