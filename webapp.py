@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from tools.filter_control.webapp import main
+from tools.gallery_webapp.webapp import main
 
 
 if __name__ == "__main__":

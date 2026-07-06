@@ -14,14 +14,13 @@ Gallery_Manager/
   tools/
     database_ingestor/
       loc_metadata_db.py
-    filter_control/
+    gallery_webapp/
       webapp.py
       static/
       templates/
+    filter_control/           # compatibility wrapper -> gallery_webapp
     client_viewer/
       viewer.py
-      templates/
-      static/
       README.md
   loc_metadata_db.py          # compatibility wrapper
   webapp.py                   # compatibility wrapper
@@ -115,6 +114,9 @@ Run the app (wrapper or tool path):
 
 ```bash
 .venv/bin/python webapp.py --db loc_metadata.db --host 0.0.0.0 --port 8080
+
+# Direct tool entrypoint
+.venv/bin/python tools/gallery_webapp/webapp.py --db loc_metadata.db --host 0.0.0.0 --port 8080
 ```
 
 Open from any device on your LAN:
@@ -152,3 +154,8 @@ The viewer now runs inside the same Flask process as filter control.
 - No second service is required.
 - `/viewer` polls local selection APIs and cycles image-ready records.
 - Use `--poll-seconds` and `--slide-seconds` on `webapp.py` to tune slideshow timing.
+
+## Compatibility Notes
+
+- `tools/filter_control/webapp.py` remains as a forwarding wrapper for legacy commands.
+- `tools/client_viewer/viewer.py` remains as a forwarding wrapper to the unified web app.
