@@ -1,0 +1,1 @@
+"""Filter control web app for Gallery Manager."""

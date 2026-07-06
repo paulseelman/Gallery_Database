@@ -1,0 +1,1 @@
+"""Database ingestion tool for Gallery Manager."""

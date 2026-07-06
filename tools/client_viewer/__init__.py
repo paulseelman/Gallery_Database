@@ -1,0 +1,1 @@
+"""Client viewer tool for Gallery Manager."""
