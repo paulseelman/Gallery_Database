@@ -29,6 +29,7 @@ FILTER_KEYS = {
     "fts",
     "limit",
     "shuffle",
+    "exclude_portraits",
 }
 
 
@@ -144,6 +145,7 @@ def default_filter() -> Dict[str, Any]:
         "fts": "",
         "limit": 60,
         "shuffle": False,
+        "exclude_portraits": False,
     }
 
 
@@ -163,6 +165,8 @@ def normalize_filter(data: Dict[str, Any]) -> Dict[str, Any]:
             limit = int(value or out["limit"])
             out[key] = max(1, min(limit, 500))
         elif key == "shuffle":
+            out[key] = bool(value)
+        elif key == "exclude_portraits":
             out[key] = bool(value)
     return out
 
@@ -282,6 +286,17 @@ def build_results_sql(filters: Dict[str, Any]) -> tuple[str, List[Any]]:
     if filters.get("year_to") is not None:
         where.append("COALESCE(i.year_start, i.year_end, 0) <= ?")
         where_args.append(filters["year_to"])
+
+    if filters.get("exclude_portraits"):
+        # Exclude items explicitly tagged as portrait content and titles that
+        # include portrait wording.
+        where.append("lower(i.title) NOT LIKE '%portrait%'")
+        where.append(
+            "NOT EXISTS ("
+            "SELECT 1 FROM item_terms tp "
+            "WHERE tp.item_id = i.id AND lower(tp.term_value) LIKE '%portrait%'"
+            ")"
+        )
 
     def add_term(term_type: str, value: Optional[str]) -> None:
         if not value:

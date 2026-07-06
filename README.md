@@ -25,9 +25,9 @@ This project builds a local SQLite database from downloaded image metadata files
 ## Build Database
 
 ```bash
-cd /tank/media/Projects/Gallery_Database
+cd /path/to/Gallery_Database
 python3 loc_metadata_db.py ingest \
-  --images-root "/tank/media/Images" \
+  --images-root "/path/to/Images" \
   --db loc_metadata.db
 ```
 
@@ -55,7 +55,7 @@ Fallback behavior:
 
 Path key stability:
 
-- `json_path` is normalized relative to the nearest `Images` directory segment, so ingesting from `/tank/media/Images` or `/tank/media/Images/<source>` resolves to the same key.
+- `json_path` is normalized relative to the nearest `Images` directory segment, so ingesting from `/path/to/Images` or `/path/to/Images/<source>` resolves to the same key.
 
 ## Quick Stats
 
@@ -140,7 +140,7 @@ This project includes a network-accessible filter management web app for control
 ### Install
 
 ```bash
-cd /tank/media/Projects/Gallery_Database
+cd /path/to/Gallery_Database
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
 ```
@@ -166,6 +166,11 @@ http://<your-server-ip>:8080
 - `GET /api/collections`: collection list/counts for the collection dropdown
 - `GET /api/facets`: top facet values for dropdown/suggestions
 - `GET /api/active-selection`: saved filter + current matching items
+
+### Filter Controls
+
+- `Exclude portraits`: removes items whose title or metadata terms contain `portrait`.
+- The toggle is part of the saved active filter payload, so it is preserved by `PUT /api/filter` and applied by both `GET /api/results` and `GET /api/active-selection`.
 
 `/api/active-selection` is designed to make Raspberry Pi integration simple: your Pi can poll this endpoint, shuffle/display the returned items, and stay synchronized with the UI-managed active filter.
 
