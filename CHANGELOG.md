@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
-## [Unreleased]
+## [0.2.0] - 2026-07-05
 ### Changed
 - Improved JSON discovery during ingest to support collections where metadata files are not always named `item.json` (for example LoC item folders with numeric JSON basenames).
 - Updated collection inference so `collection` uses the parent folder of each imageset rather than the source root folder.
@@ -23,4 +23,5 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 - CLI commands for ingest, stats, and filtered query operations.
 - Project documentation and usage examples.
 
+[0.2.0]: https://github.com/paulseelman/Gallery_Database/releases/tag/v0.2.0
 [0.1.0]: https://github.com/paulseelman/Gallery_Database/releases/tag/v0.1.0
