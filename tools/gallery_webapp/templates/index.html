@@ -126,6 +126,14 @@
       </figure>
       <section id="lightbox_meta" class="lightbox-meta">
         <div class="lightbox-meta-controls">
+          <div id="lightbox_timer_wrap" class="lightbox-timer-wrap">
+            <button id="lightbox_timer" class="lightbox-control-btn" type="button" aria-label="Set autoplay timer" aria-expanded="false" aria-controls="lightbox_timer_popover" title="Autoplay timer">5s</button>
+            <div id="lightbox_timer_popover" class="lightbox-timer-popover is-hidden" role="dialog" aria-label="Autoplay timer settings">
+              <label class="lightbox-timer-field">seconds
+                <input id="autoplay_seconds" type="number" min="1" max="31536000" step="1" value="5" inputmode="numeric">
+              </label>
+            </div>
+          </div>
           <button id="lightbox_prev" class="lightbox-control-btn" type="button" aria-label="Previous image">&lt;</button>
           <button id="lightbox_next" class="lightbox-control-btn" type="button" aria-label="Next image">&gt;</button>
           <button id="lightbox_mode" class="lightbox-control-btn" type="button" aria-label="Autoplay paused" aria-pressed="false" title="Lightbox mode">&#9654;</button>

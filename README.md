@@ -135,6 +135,7 @@ http://<your-server-ip>:8080
 ### Filter Notes
 
 - `Exclude portraits` removes items whose title or metadata terms contain `portrait`.
+- The lightbox autoplay timer persists with the active filter state and controls the autoplay/shuffle interval.
 - `/api/active-selection` is suitable for polling clients (for example a Raspberry Pi display loop).
 
 ## Unified Viewer Notes
