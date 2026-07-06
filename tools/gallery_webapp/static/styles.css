@@ -377,15 +377,16 @@ button:hover {
   width: 100%;
   margin: 0 auto;
   padding: clamp(0.7rem, 1.2vw, 1.1rem);
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.5rem;
+  display: flex;
+  align-items: stretch;
   background: #000;
   border: 1px solid rgba(220, 197, 157, 0.25);
   border-radius: 0;
 }
 
 .lightbox-stage {
+  flex: 1 1 0;
+  min-width: 0;
   margin: 0;
   border: 0;
   border-radius: 0;
@@ -407,6 +408,7 @@ button:hover {
 }
 
 .lightbox-meta {
+  flex: 0 0 auto;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -420,13 +422,39 @@ button:hover {
   width: max(15vw, var(--meta-controls-width, 0px));
   min-width: 0;
   max-width: none;
-  justify-self: end;
   overflow-x: hidden;
   overflow-y: auto;
 }
 
-.lightbox-dialog.meta-collapsed {
-  grid-template-columns: minmax(0, 1fr);
+.lightbox-resizer {
+  flex: 0 0 8px;
+  align-self: stretch;
+  width: 8px;
+  cursor: col-resize;
+  position: relative;
+  z-index: 2;
+  background: transparent;
+  transition: background 0.15s;
+}
+
+.lightbox-resizer::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1px;
+  background: rgba(220, 197, 157, 0);
+  transition: background 0.15s;
+}
+
+.lightbox-resizer:hover::after,
+.lightbox-resizer.is-dragging::after {
+  background: rgba(220, 197, 157, 0.35);
+}
+
+.lightbox-dialog.meta-collapsed .lightbox-resizer {
+  display: none;
 }
 
 .lightbox-meta.is-collapsed {
