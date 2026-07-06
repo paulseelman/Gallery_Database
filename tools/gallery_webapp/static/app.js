@@ -1,3 +1,79 @@
+let jsonViewerItem = null;
+
+function highlightJson(obj) {
+  const str = JSON.stringify(obj, null, 2);
+  const escaped = str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+  return escaped.replace(
+    /("(?:[^"\\]|\\.)*"\s*:?|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?)/g,
+    (match) => {
+      if (match[0] === '"') {
+        return match[match.length - 1] === ':'
+          ? `<span class="json-key">${match}</span>`
+          : `<span class="json-str">${match}</span>`;
+      }
+      if (match === 'true' || match === 'false') return `<span class="json-bool">${match}</span>`;
+      if (match === 'null') return `<span class="json-null">${match}</span>`;
+      return `<span class="json-num">${match}</span>`;
+    }
+  );
+}
+
+function openJsonViewer(item) {
+  jsonViewerItem = item;
+  const viewer = elem("json_viewer");
+  elem("json_viewer_content").innerHTML = highlightJson(item);
+  viewer.style.transform = "";
+  viewer.style.left = "";
+  viewer.style.top = "";
+  viewer.classList.remove("is-hidden");
+  viewer.setAttribute("aria-hidden", "false");
+  elem("json_viewer_close").focus();
+}
+
+function closeJsonViewer() {
+  const viewer = elem("json_viewer");
+  viewer.classList.add("is-hidden");
+  viewer.setAttribute("aria-hidden", "true");
+  jsonViewerItem = null;
+}
+
+function initJsonViewerDrag() {
+  const viewer = elem("json_viewer");
+  const header = elem("json_viewer_header");
+  let dragging = false;
+  let startX = 0;
+  let startY = 0;
+  let startLeft = 0;
+  let startTop = 0;
+
+  header.addEventListener("mousedown", (e) => {
+    if (e.button !== 0) return;
+    dragging = true;
+    const rect = viewer.getBoundingClientRect();
+    startX = e.clientX;
+    startY = e.clientY;
+    startLeft = rect.left;
+    startTop = rect.top;
+    viewer.style.transform = "none";
+    viewer.style.left = startLeft + "px";
+    viewer.style.top = startTop + "px";
+    e.preventDefault();
+  });
+
+  document.addEventListener("mousemove", (e) => {
+    if (!dragging) return;
+    viewer.style.left = (startLeft + e.clientX - startX) + "px";
+    viewer.style.top = (startTop + e.clientY - startY) + "px";
+  });
+
+  document.addEventListener("mouseup", () => {
+    dragging = false;
+  });
+}
+
 const ids = [
   "collection",
   "year_from",
@@ -599,6 +675,19 @@ async function boot() {
   elem("lightbox_close").addEventListener("click", () => {
     closeLightbox();
   });
+
+  elem("lightbox_json_link").addEventListener("click", (e) => {
+    e.preventDefault();
+    const pool = lightboxPool();
+    const item = pool[lightboxIndex];
+    if (item) openJsonViewer(item);
+  });
+
+  elem("json_viewer_close").addEventListener("click", () => {
+    closeJsonViewer();
+  });
+
+  initJsonViewerDrag();
 
   elem("lightbox_meta_toggle").addEventListener("click", () => {
     setLightboxMetaCollapsed(!lightboxMetaCollapsed);
