@@ -39,6 +39,8 @@ app = Flask(__name__)
 app.config["DB_PATH"] = str(DEFAULT_DB_PATH)
 app.config["STATE_DB_PATH"] = str(DEFAULT_STATE_PATH)
 app.config["IMAGES_ROOT"] = str(DEFAULT_IMAGES_ROOT)
+app.config["POLL_SECONDS"] = 20
+app.config["SLIDE_SECONDS"] = 8
 
 _FACETS_CACHE: Dict[str, Any] = {
     "db_mtime": None,
@@ -434,6 +436,15 @@ def index() -> str:
     return render_template("index.html")
 
 
+@app.route("/viewer")
+def viewer() -> str:
+    viewer_config = {
+        "pollSeconds": int(app.config["POLL_SECONDS"]),
+        "slideSeconds": int(app.config["SLIDE_SECONDS"]),
+    }
+    return render_template("viewer.html", viewer_config=json.dumps(viewer_config, ensure_ascii=True))
+
+
 @app.route("/api/filter", methods=["GET", "PUT"])
 def api_filter() -> Any:
     if request.method == "GET":
@@ -535,11 +546,27 @@ def api_active_selection() -> Any:
     })
 
 
+@app.route("/api/selection", methods=["GET"])
+def api_selection() -> Any:
+    active = load_active_filter()
+    result = query_results(active["filter"])
+    return jsonify({
+        "source": "local",
+        "fetched_at": utc_now_iso(),
+        "active_filter": active["filter"],
+        "updated_at": active["updated_at"],
+        "count": result["count"],
+        "items": result["items"],
+    })
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Network-accessible filter manager for Gallery Manager metadata")
     parser.add_argument("--db", type=Path, default=Path(os.environ.get("LOC_DB_PATH", DEFAULT_DB_PATH)))
     parser.add_argument("--state-db", type=Path, default=Path(os.environ.get("LOC_STATE_DB", DEFAULT_STATE_PATH)))
     parser.add_argument("--images-root", type=Path, default=Path(os.environ.get("LOC_IMAGES_ROOT", DEFAULT_IMAGES_ROOT)))
+    parser.add_argument("--poll-seconds", type=int, default=int(os.environ.get("LOC_VIEWER_POLL_SECONDS", "20")))
+    parser.add_argument("--slide-seconds", type=int, default=int(os.environ.get("LOC_VIEWER_SLIDE_SECONDS", "8")))
     parser.add_argument("--host", default=os.environ.get("LOC_WEB_HOST", "0.0.0.0"))
     parser.add_argument("--port", type=int, default=int(os.environ.get("LOC_WEB_PORT", "8080")))
     parser.add_argument("--debug", action="store_true")
@@ -552,6 +579,8 @@ def main() -> int:
     app.config["DB_PATH"] = str(args.db)
     app.config["STATE_DB_PATH"] = str(args.state_db)
     app.config["IMAGES_ROOT"] = str(args.images_root)
+    app.config["POLL_SECONDS"] = max(5, args.poll_seconds)
+    app.config["SLIDE_SECONDS"] = max(2, args.slide_seconds)
 
     init_state_db()
 
