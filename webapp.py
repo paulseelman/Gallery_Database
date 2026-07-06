@@ -5,6 +5,7 @@ import argparse
 import datetime as dt
 import json
 import os
+import re
 import sqlite3
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -36,6 +37,64 @@ app.config["DB_PATH"] = str(DEFAULT_DB_PATH)
 app.config["STATE_DB_PATH"] = str(DEFAULT_STATE_PATH)
 app.config["IMAGES_ROOT"] = str(DEFAULT_IMAGES_ROOT)
 
+_FACETS_CACHE: Dict[str, Any] = {
+    "db_mtime": None,
+    "limit": None,
+    "payload": None,
+}
+
+_COLLECTIONS_CACHE: Dict[str, Any] = {
+    "db_mtime": None,
+    "limit": None,
+    "payload": None,
+}
+
+
+def get_or_build_facets_payload(db_path: Path, limit: int) -> Dict[str, Any]:
+    db_mtime = db_path.stat().st_mtime
+    cached = (
+        _FACETS_CACHE.get("payload") is not None
+        and _FACETS_CACHE.get("db_mtime") == db_mtime
+        and _FACETS_CACHE.get("limit") == limit
+    )
+    if cached:
+        return _FACETS_CACHE["payload"]
+
+    with db_conn(db_path) as conn:
+        facets = {
+            "collections": collection_values(conn, limit=limit),
+            "subjects": facet_values(conn, "subject", limit=limit),
+            "locations": facet_values(conn, "location", limit=limit),
+            "tags": facet_values(conn, "tag", limit=limit),
+            "contributors": facet_values(conn, "contributor", limit=limit),
+        }
+
+    payload = {"facets": facets}
+    _FACETS_CACHE["db_mtime"] = db_mtime
+    _FACETS_CACHE["limit"] = limit
+    _FACETS_CACHE["payload"] = payload
+    return payload
+
+
+def get_or_build_collections_payload(db_path: Path, limit: int) -> Dict[str, Any]:
+    db_mtime = db_path.stat().st_mtime
+    cached = (
+        _COLLECTIONS_CACHE.get("payload") is not None
+        and _COLLECTIONS_CACHE.get("db_mtime") == db_mtime
+        and _COLLECTIONS_CACHE.get("limit") == limit
+    )
+    if cached:
+        return _COLLECTIONS_CACHE["payload"]
+
+    with db_conn(db_path) as conn:
+        collections = collection_values(conn, limit=limit)
+
+    payload = {"collections": collections}
+    _COLLECTIONS_CACHE["db_mtime"] = db_mtime
+    _COLLECTIONS_CACHE["limit"] = limit
+    _COLLECTIONS_CACHE["payload"] = payload
+    return payload
+
 
 def utc_now_iso() -> str:
     return dt.datetime.now(dt.UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
@@ -45,6 +104,16 @@ def db_conn(db_path: Path) -> sqlite3.Connection:
     conn = sqlite3.connect(str(db_path))
     conn.row_factory = sqlite3.Row
     return conn
+
+
+def ensure_query_indexes(conn: sqlite3.Connection) -> None:
+    conn.executescript(
+        """
+        CREATE INDEX IF NOT EXISTS idx_items_year_start_title ON items(year_start, title);
+        CREATE INDEX IF NOT EXISTS idx_items_collection_year_title ON items(collection, year_start, title);
+        """
+    )
+    conn.commit()
 
 
 def init_state_db() -> None:
@@ -229,60 +298,45 @@ def build_results_sql(filters: Dict[str, Any]) -> tuple[str, List[Any]]:
     add_term("tag", filters.get("tag"))
     add_term("contributor", filters.get("contributor"))
 
+    fts_match_args: List[str] = []
+
     if filters.get("any_term"):
-        joins.append(
-            """
-            JOIN item_terms t_any
-              ON t_any.item_id = i.id
-             AND t_any.term_type IN ('subject', 'location', 'tag', 'contributor', 'format', 'language', 'note')
-             AND t_any.term_value LIKE ?
-            """
-        )
-        join_args.append(f"%{filters['any_term'].lower()}%")
+        # Fast path: map free-text any_term to FTS tokens instead of a
+        # wildcard LIKE scan across item_terms.
+        tokens = re.findall(r"[0-9A-Za-z_]+", filters["any_term"].lower())
+        if tokens:
+            fts_match_args.append(" AND ".join(tokens))
 
     if filters.get("fts"):
+        fts_match_args.append(filters["fts"])
+
+    if fts_match_args:
         joins.append("JOIN items_fts f ON f.rowid = i.id")
-        where.append("items_fts MATCH ?")
-        where_args.append(filters["fts"])
+        for _ in fts_match_args:
+            where.append("items_fts MATCH ?")
+        where_args.extend(fts_match_args)
 
     where_sql = " AND ".join(where) if where else "1=1"
     joins_sql = "\n".join(joins)
 
-    order_sql = "RANDOM()" if filters.get("shuffle") else "COALESCE(year_start, 9999), title"
+    # Keep default ordering index-friendly to avoid full temp-table sorts.
+    order_sql = "RANDOM()" if filters.get("shuffle") else "i.year_start, i.title"
 
     sql = f"""
-        WITH matched AS (
-            SELECT DISTINCT i.*
-            FROM items i
-            {joins_sql}
-            WHERE {where_sql}
-        ),
-        deduped AS (
-            SELECT
-                m.*,
-                ROW_NUMBER() OVER (
-                    PARTITION BY COALESCE(NULLIF(m.item_id, ''), NULLIF(m.url, ''), m.json_path)
-                    ORDER BY
-                        CASE WHEN m.collection = 'Library of Congress' THEN 1 ELSE 0 END,
-                        CASE WHEN COALESCE(m.collection, '') = '' THEN 1 ELSE 0 END,
-                        LENGTH(COALESCE(m.collection, '')),
-                        m.id
-                ) AS rn
-            FROM matched m
-        )
-        SELECT
-            item_id,
-            title,
-            date_raw,
-            year_start,
-            year_end,
-            collection,
-            url,
-            json_path,
-            imageset_folder,
-            raw_json
-        FROM deduped
-        WHERE rn = 1
+        SELECT DISTINCT
+            i.item_id,
+            i.title,
+            i.date_raw,
+            i.year_start,
+            i.year_end,
+            i.collection,
+            i.url,
+            i.json_path,
+            i.imageset_folder,
+            i.raw_json
+        FROM items i
+        {joins_sql}
+        WHERE {where_sql}
         ORDER BY {order_sql}
         LIMIT ?
     """
@@ -359,16 +413,17 @@ def api_facets() -> Any:
         return jsonify({"error": f"Database not found: {db_path}", "facets": {}}), 404
 
     limit = max(5, min(int(request.args.get("limit", "50")), 200))
-    with db_conn(db_path) as conn:
-        facets = {
-            "collections": collection_values(conn, limit=limit),
-            "subjects": facet_values(conn, "subject", limit=limit),
-            "locations": facet_values(conn, "location", limit=limit),
-            "tags": facet_values(conn, "tag", limit=limit),
-            "contributors": facet_values(conn, "contributor", limit=limit),
-        }
+    return jsonify(get_or_build_facets_payload(db_path, limit))
 
-    return jsonify({"facets": facets})
+
+@app.route("/api/collections", methods=["GET"])
+def api_collections() -> Any:
+    db_path = Path(app.config["DB_PATH"])
+    if not db_path.exists():
+        return jsonify({"error": f"Database not found: {db_path}", "collections": []}), 404
+
+    limit = max(5, min(int(request.args.get("limit", "120")), 200))
+    return jsonify(get_or_build_collections_payload(db_path, limit))
 
 
 @app.route("/api/active-selection", methods=["GET"])
@@ -402,6 +457,13 @@ def main() -> int:
     app.config["IMAGES_ROOT"] = str(args.images_root)
 
     init_state_db()
+
+    db_path = Path(app.config["DB_PATH"])
+    if db_path.exists():
+        with db_conn(db_path) as conn:
+            ensure_query_indexes(conn)
+        # Warm the facets cache for the UI's default load path.
+        get_or_build_facets_payload(db_path, limit=120)
 
     app.run(host=args.host, port=args.port, debug=args.debug)
     return 0

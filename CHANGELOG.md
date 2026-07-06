@@ -10,6 +10,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 - Updated collection inference so `collection` uses the parent folder of each imageset rather than the source root folder.
 - Normalized `json_path` keys relative to the nearest `Images` directory segment to keep upserts stable regardless of ingest root choice.
 - Rebuilt the local metadata database from `/tank/media/Images` using the new rules.
+- Optimized `/api/results` query planning and ordering for substantially lower filter latency.
+- Switched `any_term` filtering to use FTS-backed matching for faster free-text lookups.
+- Added startup index assurance and warm-cache behavior for UI facets.
+- Added dedicated `GET /api/collections` endpoint so collection dropdown loading is independent from full facet aggregation.
 
 ## [0.1.0] - 2026-07-05
 ### Added
