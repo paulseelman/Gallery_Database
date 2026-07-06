@@ -118,6 +118,41 @@
     </section>
   </main>
 
+  <aside id="lightbox" class="lightbox is-hidden" aria-hidden="true" role="dialog" aria-label="Image preview">
+    <button id="lightbox_backdrop" class="lightbox-backdrop" type="button" aria-label="Close image preview"></button>
+    <div class="lightbox-dialog" role="document">
+      <figure class="lightbox-stage">
+        <img id="lightbox_image" alt="selected image preview">
+      </figure>
+      <section class="lightbox-meta">
+        <h3 id="lightbox_title">No item selected</h3>
+        <p id="lightbox_subtitle">Choose an item to inspect details.</p>
+        <dl class="lightbox-facts">
+          <div>
+            <dt>Collection</dt>
+            <dd id="lightbox_collection">n/a</dd>
+          </div>
+          <div>
+            <dt>Date</dt>
+            <dd id="lightbox_date">n/a</dd>
+          </div>
+          <div>
+            <dt>Item ID</dt>
+            <dd id="lightbox_item_id">n/a</dd>
+          </div>
+          <div>
+            <dt>Years</dt>
+            <dd id="lightbox_years">n/a</dd>
+          </div>
+        </dl>
+        <div class="lightbox-actions">
+          <a id="lightbox_link" href="#" target="_blank" rel="noreferrer">Open source record</a>
+          <button id="lightbox_close" type="button">Close</button>
+        </div>
+      </section>
+    </div>
+  </aside>
+
   <script src="/static/app.js"></script>
 </body>
 </html>

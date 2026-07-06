@@ -19,6 +19,7 @@ const VIEW_MASTER = "master";
 let currentItems = [];
 let currentView = VIEW_GALLERY;
 let masterIndex = 0;
+let lightboxLastFocus = null;
 
 function elem(id) {
   return document.getElementById(id);
@@ -112,6 +113,64 @@ function openMasterForItem(itemId) {
   setView(VIEW_MASTER);
 }
 
+function findItemById(itemId) {
+  const wantedId = String(itemId || "");
+  return currentItems.find((item) => String(item.item_id) === wantedId) || null;
+}
+
+function itemImageUrl(item) {
+  if (!item) {
+    return "";
+  }
+  return item.master_image_url || item.thumbnail_url || "";
+}
+
+function openLightboxForItem(itemId) {
+  const item = findItemById(itemId);
+  const imageUrl = itemImageUrl(item);
+  if (!item || !imageUrl) {
+    return;
+  }
+
+  lightboxLastFocus = document.activeElement;
+
+  elem("lightbox_image").src = imageUrl;
+  elem("lightbox_image").alt = item.title || "selected image";
+
+  elem("lightbox_title").textContent = item.title || "(untitled)";
+  elem("lightbox_subtitle").textContent = `${item.collection || "unknown"} | ${item.date_raw || "n/a"}`;
+  elem("lightbox_collection").textContent = item.collection || "n/a";
+  elem("lightbox_date").textContent = item.date_raw || "n/a";
+  elem("lightbox_item_id").textContent = item.item_id || "n/a";
+
+  const yearStart = item.year_start == null ? "?" : String(item.year_start);
+  const yearEnd = item.year_end == null ? "?" : String(item.year_end);
+  elem("lightbox_years").textContent = `${yearStart} - ${yearEnd}`;
+
+  const link = elem("lightbox_link");
+  link.href = item.url || "#";
+  link.style.visibility = item.url ? "visible" : "hidden";
+
+  const panel = elem("lightbox");
+  panel.classList.remove("is-hidden");
+  panel.setAttribute("aria-hidden", "false");
+  document.body.classList.add("no-scroll");
+  elem("lightbox_close").focus();
+}
+
+function closeLightbox() {
+  const panel = elem("lightbox");
+  panel.classList.add("is-hidden");
+  panel.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("no-scroll");
+  elem("lightbox_image").removeAttribute("src");
+
+  if (lightboxLastFocus && typeof lightboxLastFocus.focus === "function") {
+    lightboxLastFocus.focus();
+  }
+  lightboxLastFocus = null;
+}
+
 function currentFilterFromForm() {
   return {
     collection: elem("collection").value.trim(),
@@ -177,11 +236,16 @@ function resultCard(item) {
   const safeCollection = escapeHtml(item.collection || "unknown");
   const safeDate = escapeHtml(item.date_raw || "n/a");
   const safeUrl = escapeHtml(item.url || "#");
-  const imageSrc = escapeHtml(item.thumbnail_url || "");
-  const imageAlt = item.thumbnail_url ? safeTitle : "No preview available";
+  const previewUrl = item.master_image_url || item.thumbnail_url || "";
+  const imageSrc = escapeHtml(previewUrl);
+  const imageAlt = previewUrl ? safeTitle : "No preview available";
 
-  const imageTag = item.thumbnail_url
-    ? `<img class="thumb" loading="lazy" src="${imageSrc}" alt="${imageAlt}">`
+  const imageTag = previewUrl
+    ? `
+      <button class="card-image-hit" type="button" aria-label="Open image preview for ${safeTitle}">
+        <img class="thumb" loading="lazy" src="${imageSrc}" alt="${imageAlt}">
+      </button>
+    `
     : `<div class="thumb thumb--placeholder" aria-hidden="true"></div>`;
 
   return `
@@ -193,7 +257,6 @@ function resultCard(item) {
         <p>${safeDate}</p>
         <div class="meta-actions">
           <a href="${safeUrl}" target="_blank" rel="noreferrer">Open record</a>
-          <button class="master-jump" type="button">View master</button>
         </div>
       </div>
     </article>
@@ -204,12 +267,12 @@ function wireGridEvents() {
   const cards = elem("results_grid").querySelectorAll(".card");
   cards.forEach((card) => {
     const itemId = card.getAttribute("data-item-id");
-    const jump = card.querySelector(".master-jump");
-    if (!jump || !itemId) {
+    const imageHit = card.querySelector(".card-image-hit");
+    if (!imageHit || !itemId) {
       return;
     }
-    jump.addEventListener("click", () => {
-      openMasterForItem(itemId);
+    imageHit.addEventListener("click", () => {
+      openLightboxForItem(itemId);
     });
   });
 }
@@ -358,6 +421,24 @@ async function boot() {
 
   elem("master_next_btn").addEventListener("click", () => {
     stepMaster(1);
+  });
+
+  elem("lightbox_backdrop").addEventListener("click", () => {
+    closeLightbox();
+  });
+
+  elem("lightbox_close").addEventListener("click", () => {
+    closeLightbox();
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") {
+      return;
+    }
+    if (elem("lightbox").classList.contains("is-hidden")) {
+      return;
+    }
+    closeLightbox();
   });
 
   elem("save_btn").addEventListener("click", async () => {
