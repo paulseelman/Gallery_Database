@@ -178,19 +178,23 @@ function resultCard(item) {
   const safeDate = escapeHtml(item.date_raw || "n/a");
   const safeUrl = escapeHtml(item.url || "#");
   const imageSrc = escapeHtml(item.thumbnail_url || "");
+  const imageAlt = item.thumbnail_url ? safeTitle : "No preview available";
 
   const imageTag = item.thumbnail_url
-    ? `<img class="thumb" loading="lazy" src="${imageSrc}" alt="${safeTitle}">`
-    : `<div class="thumb"></div>`;
+    ? `<img class="thumb" loading="lazy" src="${imageSrc}" alt="${imageAlt}">`
+    : `<div class="thumb thumb--placeholder" aria-hidden="true"></div>`;
 
   return `
     <article class="card" data-item-id="${escapeHtml(item.item_id)}">
       ${imageTag}
       <div class="meta">
+        <div class="meta-kicker">${safeCollection}</div>
         <h3>${safeTitle}</h3>
-        <p>${safeCollection} | ${safeDate}</p>
-        <a href="${safeUrl}" target="_blank" rel="noreferrer">open record</a>
-        <button class="master-jump" type="button">view master</button>
+        <p>${safeDate}</p>
+        <div class="meta-actions">
+          <a href="${safeUrl}" target="_blank" rel="noreferrer">Open record</a>
+          <button class="master-jump" type="button">View master</button>
+        </div>
       </div>
     </article>
   `;

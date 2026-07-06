@@ -6,11 +6,10 @@
   <title>Gallery Manager Filter Control</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-  <div class="bg-grid"></div>
   <header class="topbar">
     <h1>Gallery Manager Filter Control</h1>
     <div id="active-meta">Loading active filter...</div>
@@ -88,7 +87,7 @@
       <div class="results-header">
         <h2>Current Selection</h2>
         <div class="results-tools">
-          <div id="result_count">0 results</div>
+          <div id="result_count" aria-live="polite">0 results</div>
           <div class="view-toggle" role="group" aria-label="Result display mode">
             <button id="gallery_view_btn" class="is-active" type="button">Gallery</button>
             <button id="master_view_btn" type="button">Master Image</button>
