@@ -9,7 +9,6 @@ const ids = [
   "contributor",
   "fts",
   "limit",
-  "shuffle",
   "exclude_portraits",
   "autoplay_seconds",
 ];
@@ -342,7 +341,6 @@ function currentFilterFromForm() {
     contributor: elem("contributor").value.trim(),
     fts: elem("fts").value.trim(),
     limit: Number(elem("limit").value || 60),
-    shuffle: elem("shuffle").checked,
     exclude_portraits: elem("exclude_portraits").checked,
     autoplay_seconds: sanitizeAutoplaySeconds(elem("autoplay_seconds").value),
   };
@@ -353,7 +351,7 @@ function applyFilterToForm(filter) {
     if (!(id in filter)) {
       return;
     }
-    if (id === "shuffle" || id === "exclude_portraits") {
+    if (id === "exclude_portraits") {
       elem(id).checked = Boolean(filter[id]);
       return;
     }
@@ -382,16 +380,14 @@ function renderChips(filter) {
     contributor: "contributor",
     fts: "fts",
     limit: "limit",
-    shuffle: "shuffle",
     exclude_portraits: "exclude portraits",
-    autoplay_seconds: "timer",
   };
 
   Object.entries(filter).forEach(([key, value]) => {
-    if (value === "" || value === null || value === false) {
+    if (value === "" || value === null || value === false || key === "autoplay_seconds") {
       return;
     }
-    const displayValue = key === "autoplay_seconds" ? `${sanitizeAutoplaySeconds(value)}s` : String(value);
+    const displayValue = String(value);
     const chip = document.createElement("span");
     chip.className = "chip";
     chip.textContent = `${labels[key] || key}: ${displayValue}`;
@@ -545,7 +541,6 @@ function clearForm() {
     contributor: "",
     fts: "",
     limit: 60,
-    shuffle: false,
     exclude_portraits: false,
     autoplay_seconds: 5,
   });
