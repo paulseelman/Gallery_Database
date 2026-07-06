@@ -193,7 +193,7 @@ function renderLightboxModeButton() {
     modeButton.setAttribute("aria-pressed", "true");
     modeButton.setAttribute("aria-label", "Autoplay running");
     modeButton.innerHTML = "&#9654;";
-    modeButton.classList.remove("is-pressed");
+    modeButton.classList.add("is-pressed");
     return;
   }
 
