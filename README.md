@@ -1,6 +1,6 @@
-# Library of Congress Metadata Database
+# Gallery Metadata Database
 
-This project builds a local SQLite database from downloaded Library of Congress item metadata (`item.json`) files.
+This project builds a local SQLite database from downloaded image metadata files in your `Images` tree (for example, `Library of Congress`, `Metropolitan`, and other sources).
 
 ## What It Stores
 
@@ -27,11 +27,35 @@ This project builds a local SQLite database from downloaded Library of Congress 
 ```bash
 cd /tank/media/Projects/Gallery_Database
 python3 loc_metadata_db.py ingest \
-  --images-root "/tank/media/Images/Library of Congress" \
+  --images-root "/tank/media/Images" \
   --db loc_metadata.db
 ```
 
 For very large archives, ingestion is resumable and idempotent because rows are upserted by `json_path`.
+
+## Ingest Rules
+
+- Ingest scans for JSON metadata recursively.
+- If a folder contains `item.json`, that file is preferred.
+- For Library of Congress item folders named like `http_www.loc.gov_item_...`, a non-`item.json` metadata file is also accepted when `item.json` is absent (for example, `8a12358.json`).
+- One metadata JSON is selected per imageset folder to avoid duplicates.
+
+## Collection Naming Rules
+
+Collection names are derived from the parent folder of each imageset, not from the source folder itself.
+
+Examples:
+
+- `Library of Congress/abdul-hamid-ii/http_www.loc.gov_item_.../item.json` -> collection `abdul-hamid-ii`
+- `Metropolitan/some-collection/some-imageset/item.json` -> collection `some-collection`
+
+Fallback behavior:
+
+- If metadata is directly under `source/imageset/...`, the source folder is used as collection.
+
+Path key stability:
+
+- `json_path` is normalized relative to the nearest `Images` directory segment, so ingesting from `/tank/media/Images` or `/tank/media/Images/<source>` resolves to the same key.
 
 ## Quick Stats
 
@@ -107,7 +131,7 @@ LIMIT 100;
 
 - JSON shape varies slightly by collection, so ingestion is defensive and normalizes lists/dicts.
 - Date strings like `[between 1880 and 1893]` are parsed into `year_start=1880`, `year_end=1893`.
-- Only `item.json` files are ingested.
+- Metadata JSON naming varies by source; ingestion supports both `item.json` and source-specific item JSON filenames in known item-folder patterns.
 
 ## Web Filter Manager
 
