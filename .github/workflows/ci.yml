@@ -19,7 +19,12 @@ jobs:
           python-version: "3.11"
 
       - name: Syntax check
-        run: python -m py_compile loc_metadata_db.py
+        run: |
+          python -m py_compile loc_metadata_db.py
+          python -m py_compile webapp.py
+          python -m py_compile tools/database_ingestor/loc_metadata_db.py
+          python -m py_compile tools/filter_control/webapp.py
+          python -m py_compile tools/client_viewer/viewer.py
 
       - name: CLI help smoke test
         run: |
@@ -27,3 +32,5 @@ jobs:
           python loc_metadata_db.py ingest --help
           python loc_metadata_db.py stats --help
           python loc_metadata_db.py query --help
+          python webapp.py --help
+          python tools/client_viewer/viewer.py --help

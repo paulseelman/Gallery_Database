@@ -23,5 +23,5 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 - CLI commands for ingest, stats, and filtered query operations.
 - Project documentation and usage examples.
 
-[0.2.0]: https://github.com/paulseelman/Gallery_Database/releases/tag/v0.2.0
-[0.1.0]: https://github.com/paulseelman/Gallery_Database/releases/tag/v0.1.0
+[0.2.0]: https://github.com/paulseelman/Gallery_Manager/releases/tag/v0.2.0
+[0.1.0]: https://github.com/paulseelman/Gallery_Manager/releases/tag/v0.1.0
