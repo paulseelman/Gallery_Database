@@ -67,6 +67,8 @@ def create_schema(conn: sqlite3.Connection) -> None:
         CREATE INDEX IF NOT EXISTS idx_items_collection ON items(collection);
         CREATE INDEX IF NOT EXISTS idx_items_year_start ON items(year_start);
         CREATE INDEX IF NOT EXISTS idx_items_year_end ON items(year_end);
+        CREATE INDEX IF NOT EXISTS idx_items_year_start_title ON items(year_start, title);
+        CREATE INDEX IF NOT EXISTS idx_items_collection_year_title ON items(collection, year_start, title);
         CREATE INDEX IF NOT EXISTS idx_terms_type_value ON item_terms(term_type, term_value);
 
         CREATE VIRTUAL TABLE IF NOT EXISTS items_fts USING fts5(

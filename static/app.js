@@ -96,15 +96,6 @@ async function loadFacets() {
   const data = await res.json();
   const facets = data.facets || {};
 
-  const collectionSelect = elem("collection");
-  collectionSelect.innerHTML = `<option value="">(any collection)</option>`;
-  (facets.collections || []).forEach((entry) => {
-    const opt = document.createElement("option");
-    opt.value = entry.value;
-    opt.textContent = `${entry.value} (${entry.count})`;
-    collectionSelect.appendChild(opt);
-  });
-
   function fillDatalist(id, values) {
     const list = elem(id);
     list.innerHTML = "";
@@ -119,6 +110,27 @@ async function loadFacets() {
   fillDatalist("locations_list", facets.locations || []);
   fillDatalist("tags_list", facets.tags || []);
   fillDatalist("contributors_list", facets.contributors || []);
+}
+
+async function loadCollections() {
+  const res = await fetch("/api/collections?limit=120");
+  const data = await res.json();
+  const collections = data.collections || [];
+
+  const collectionSelect = elem("collection");
+  const selected = collectionSelect.value;
+  collectionSelect.innerHTML = `<option value="">(any collection)</option>`;
+
+  collections.forEach((entry) => {
+    const opt = document.createElement("option");
+    opt.value = entry.value;
+    opt.textContent = `${entry.value} (${entry.count})`;
+    collectionSelect.appendChild(opt);
+  });
+
+  if (selected) {
+    collectionSelect.value = selected;
+  }
 }
 
 async function applyAndRender(filter) {
@@ -180,9 +192,23 @@ function clearForm() {
 }
 
 async function boot() {
-  await loadFacets();
+  // Load collections first so the dropdown is ready quickly.
+  const collectionsPromise = loadCollections();
+
+  // Facets can be expensive to compute on large datasets. Load them in the
+  // background so active filter/results appear immediately.
+  const facetsPromise = loadFacets();
+
   const activeFilter = await loadActiveFilter();
   await applyAndRender(activeFilter);
+
+  collectionsPromise.catch((err) => {
+    console.error(err);
+  });
+
+  facetsPromise.catch((err) => {
+    console.error(err);
+  });
 
   elem("apply_btn").addEventListener("click", async () => {
     await applyAndRender(currentFilterFromForm());

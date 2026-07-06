@@ -163,7 +163,15 @@ http://<your-server-ip>:8080
 - `PUT /api/filter`: save active filter (JSON body)
 - `POST /api/results`: run ad-hoc query for provided filter
 - `GET /api/results`: run query using saved active filter
+- `GET /api/collections`: collection list/counts for the collection dropdown
 - `GET /api/facets`: top facet values for dropdown/suggestions
 - `GET /api/active-selection`: saved filter + current matching items
 
 `/api/active-selection` is designed to make Raspberry Pi integration simple: your Pi can poll this endpoint, shuffle/display the returned items, and stay synchronized with the UI-managed active filter.
+
+### Performance Notes
+
+- Results query performance was optimized by using index-friendly ordering and avoiding expensive always-on dedupe windowing.
+- Free-text `any_term` matching is routed through FTS, which is significantly faster than wildcard scans over normalized term tables.
+- The collection dropdown is loaded via `GET /api/collections` so it does not wait on broader facet aggregation.
+- Facets are cached in-memory and warmed at startup (default UI limit is 120), which reduces first-interaction delays after the server is running.
