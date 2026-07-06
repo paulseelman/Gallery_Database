@@ -2,10 +2,10 @@
 
 Gallery Manager is a local toolkit for building and managing a metadata-driven image gallery workflow.
 
-The project now uses a tool-oriented structure that supports three major components:
+The project now uses a tool-oriented structure that supports the current major components:
 
 - Database creator and ingestor (current)
-- Unified filter/search web app with gallery and master image views (current)
+- Unified filter/search web app with gallery results and lightbox image viewing (current)
 
 ## Project Structure
 
@@ -140,10 +140,10 @@ http://<your-server-ip>:8080
 
 ## Unified Viewer Notes
 
-Master image viewing now runs inside the same page as filter control.
+Image inspection now runs inside the same page as filter control through the lightbox.
 
 - No second service is required.
-- Use the in-page `Gallery` / `Master Image` toggle to switch between multi-result grid and large-image browsing.
+- Click any image-ready result to open the fullscreen lightbox and browse the current result set.
 
 ## Migration Note
 
