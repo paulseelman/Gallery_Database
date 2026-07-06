@@ -17,4 +17,4 @@ http://<your-server-ip>:8080/viewer
 
 ## Compatibility Wrapper
 
-`tools/client_viewer/viewer.py` now forwards to the unified filter-control app entrypoint.
+`tools/client_viewer/viewer.py` now forwards to `tools/gallery_webapp/webapp.py`.

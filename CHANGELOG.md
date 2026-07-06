@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+## [0.2.1] - 2026-07-05
+### Changed
+- Renamed the unified app module folder from `tools/filter_control` to `tools/gallery_webapp` for clearer ownership.
+- Kept `tools/filter_control/webapp.py` as a compatibility wrapper so existing commands continue to work.
+- Removed stale standalone viewer static/template assets from `tools/client_viewer` now that viewer rendering is fully unified.
+- Updated wrappers, CI syntax checks, and README structure/commands to use the new canonical path.
+
 ## [0.2.0] - 2026-07-05
 ### Changed
 - Improved JSON discovery during ingest to support collections where metadata files are not always named `item.json` (for example LoC item folders with numeric JSON basenames).
@@ -23,5 +30,6 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 - CLI commands for ingest, stats, and filtered query operations.
 - Project documentation and usage examples.
 
+[0.2.1]: https://github.com/paulseelman/Gallery_Manager/releases/tag/v0.2.1
 [0.2.0]: https://github.com/paulseelman/Gallery_Manager/releases/tag/v0.2.0
 [0.1.0]: https://github.com/paulseelman/Gallery_Manager/releases/tag/v0.1.0

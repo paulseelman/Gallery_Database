@@ -1,1 +1,1 @@
-"""Filter control web app for Gallery Manager."""
+"""Compatibility package forwarding to tools.gallery_webapp."""
