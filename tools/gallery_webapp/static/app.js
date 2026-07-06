@@ -40,6 +40,40 @@ function closeJsonViewer() {
   jsonViewerItem = null;
 }
 
+function initLightboxResizer() {
+  const resizer = elem("lightbox_resizer");
+  const meta = elem("lightbox_meta");
+  let dragging = false;
+  let startX = 0;
+  let startWidth = 0;
+
+  resizer.addEventListener("mousedown", (e) => {
+    if (e.button !== 0) return;
+    dragging = true;
+    startX = e.clientX;
+    startWidth = meta.getBoundingClientRect().width;
+    resizer.classList.add("is-dragging");
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+    e.preventDefault();
+  });
+
+  document.addEventListener("mousemove", (e) => {
+    if (!dragging) return;
+    const delta = startX - e.clientX;
+    const newWidth = Math.max(120, startWidth + delta);
+    meta.style.width = newWidth + "px";
+  });
+
+  document.addEventListener("mouseup", () => {
+    if (!dragging) return;
+    dragging = false;
+    resizer.classList.remove("is-dragging");
+    document.body.style.cursor = "";
+    document.body.style.userSelect = "";
+  });
+}
+
 function initJsonViewerDrag() {
   const viewer = elem("json_viewer");
   const header = elem("json_viewer_header");
@@ -722,6 +756,7 @@ async function boot() {
   });
 
   initJsonViewerDrag();
+  initLightboxResizer();
 
   elem("lightbox_meta_toggle").addEventListener("click", () => {
     setLightboxMetaCollapsed(!lightboxMetaCollapsed);
