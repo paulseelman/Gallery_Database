@@ -20,6 +20,10 @@ let currentItems = [];
 let currentView = VIEW_GALLERY;
 let masterIndex = 0;
 let lightboxLastFocus = null;
+let lightboxMetaCollapsed = false;
+let lightboxIndex = 0;
+let lightboxAutoplayTimer = null;
+let lightboxMode = "paused";
 
 function elem(id) {
   return document.getElementById(id);
@@ -113,11 +117,6 @@ function openMasterForItem(itemId) {
   setView(VIEW_MASTER);
 }
 
-function findItemById(itemId) {
-  const wantedId = String(itemId || "");
-  return currentItems.find((item) => String(item.item_id) === wantedId) || null;
-}
-
 function itemImageUrl(item) {
   if (!item) {
     return "";
@@ -125,14 +124,139 @@ function itemImageUrl(item) {
   return item.master_image_url || item.thumbnail_url || "";
 }
 
-function openLightboxForItem(itemId) {
-  const item = findItemById(itemId);
-  const imageUrl = itemImageUrl(item);
-  if (!item || !imageUrl) {
+function lightboxPool() {
+  return imageReadyItems(currentItems);
+}
+
+function updateLightboxMetaWidth() {
+  const meta = elem("lightbox_meta");
+  const controls = meta.querySelector(".lightbox-meta-controls");
+  if (!controls) {
     return;
   }
 
-  lightboxLastFocus = document.activeElement;
+  const styles = window.getComputedStyle(meta);
+  const padLeft = Number.parseFloat(styles.paddingLeft) || 0;
+  const padRight = Number.parseFloat(styles.paddingRight) || 0;
+  const controlsWidth = Math.ceil(controls.getBoundingClientRect().width + padLeft + padRight);
+  meta.style.setProperty("--meta-controls-width", `${controlsWidth}px`);
+}
+
+function renderLightboxModeButton() {
+  const modeButton = elem("lightbox_mode");
+  const pool = lightboxPool();
+  const canCycle = pool.length > 1;
+
+  modeButton.disabled = !canCycle;
+
+  if (lightboxMode === "autoplay") {
+    modeButton.setAttribute("aria-pressed", "true");
+    modeButton.setAttribute("aria-label", "Autoplay running");
+    modeButton.innerHTML = "&#9654;";
+    modeButton.classList.remove("is-pressed");
+    return;
+  }
+
+  if (lightboxMode === "shuffle") {
+    modeButton.setAttribute("aria-pressed", "false");
+    modeButton.setAttribute("aria-label", "Shuffle mode");
+    modeButton.innerHTML = "&#8644;";
+    modeButton.classList.add("is-pressed");
+    return;
+  }
+
+  modeButton.setAttribute("aria-pressed", "false");
+  modeButton.setAttribute("aria-label", "Autoplay paused");
+  modeButton.innerHTML = "&#9654;";
+  modeButton.classList.remove("is-pressed");
+}
+
+function stopLightboxAutoplay() {
+  if (lightboxAutoplayTimer) {
+    window.clearInterval(lightboxAutoplayTimer);
+    lightboxAutoplayTimer = null;
+  }
+}
+
+function setLightboxMode(mode) {
+  lightboxMode = mode;
+  stopLightboxAutoplay();
+
+  const pool = lightboxPool();
+  if (pool.length <= 1) {
+    lightboxMode = "paused";
+    renderLightboxModeButton();
+    updateLightboxMetaWidth();
+    return;
+  }
+
+  if (lightboxMode === "autoplay") {
+    lightboxAutoplayTimer = window.setInterval(() => {
+      stepLightbox(1);
+    }, 2200);
+  }
+
+  if (lightboxMode === "shuffle") {
+    runLightboxShuffle();
+    lightboxAutoplayTimer = window.setInterval(() => {
+      runLightboxShuffle();
+    }, 2200);
+  }
+
+  renderLightboxModeButton();
+  updateLightboxMetaWidth();
+}
+
+function cycleLightboxMode() {
+  if (lightboxMode === "paused") {
+    setLightboxMode("autoplay");
+    return;
+  }
+  if (lightboxMode === "autoplay") {
+    setLightboxMode("shuffle");
+    return;
+  }
+  setLightboxMode("paused");
+}
+
+function runLightboxShuffle() {
+  const pool = lightboxPool();
+  if (pool.length <= 1) {
+    return;
+  }
+
+  // Uniformly sample from the returned image query pool.
+  let candidate = lightboxIndex;
+  while (candidate === lightboxIndex) {
+    candidate = Math.floor(Math.random() * pool.length);
+  }
+  setLightboxItem(candidate);
+}
+
+function renderLightboxControls(poolLength) {
+  const hasItems = poolLength > 0;
+  const prev = elem("lightbox_prev");
+  const next = elem("lightbox_next");
+
+  prev.hidden = !hasItems || lightboxIndex <= 0;
+  prev.disabled = !hasItems || lightboxIndex <= 0;
+
+  next.hidden = !hasItems || lightboxIndex >= poolLength - 1;
+  next.disabled = !hasItems || lightboxIndex >= poolLength - 1;
+
+  renderLightboxModeButton();
+  updateLightboxMetaWidth();
+}
+
+function setLightboxItem(index) {
+  const pool = lightboxPool();
+  if (pool.length === 0) {
+    return;
+  }
+
+  lightboxIndex = Math.max(0, Math.min(index, pool.length - 1));
+  const item = pool[lightboxIndex];
+  const imageUrl = itemImageUrl(item);
 
   elem("lightbox_image").src = imageUrl;
   elem("lightbox_image").alt = item.title || "selected image";
@@ -151,10 +275,59 @@ function openLightboxForItem(itemId) {
   link.href = item.url || "#";
   link.style.visibility = item.url ? "visible" : "hidden";
 
+  renderLightboxControls(pool.length);
+}
+
+function stepLightbox(delta) {
+  const pool = lightboxPool();
+  if (pool.length === 0) {
+    return;
+  }
+
+  const nextIndex = Math.max(0, Math.min(lightboxIndex + delta, pool.length - 1));
+  if (nextIndex === lightboxIndex) {
+    if (lightboxAutoplayTimer && lightboxIndex === pool.length - 1) {
+      setLightboxMode("paused");
+    }
+    return;
+  }
+  setLightboxItem(nextIndex);
+}
+
+function setLightboxMetaCollapsed(collapsed) {
+  lightboxMetaCollapsed = Boolean(collapsed);
+
+  const meta = elem("lightbox_meta");
+  const dialog = elem("lightbox_dialog");
+  const toggle = elem("lightbox_meta_toggle");
+
+  meta.classList.toggle("is-collapsed", lightboxMetaCollapsed);
+  dialog.classList.toggle("meta-collapsed", lightboxMetaCollapsed);
+
+  toggle.textContent = lightboxMetaCollapsed ? "+" : "-";
+  toggle.setAttribute("aria-label", lightboxMetaCollapsed ? "Expand metadata" : "Collapse metadata");
+  toggle.setAttribute("aria-expanded", String(!lightboxMetaCollapsed));
+  updateLightboxMetaWidth();
+}
+
+function openLightboxForItem(itemId) {
+  const pool = lightboxPool();
+  const wantedId = String(itemId || "");
+  const index = pool.findIndex((item) => String(item.item_id) === wantedId);
+  if (index < 0) {
+    return;
+  }
+
+  lightboxLastFocus = document.activeElement;
+
   const panel = elem("lightbox");
   panel.classList.remove("is-hidden");
   panel.setAttribute("aria-hidden", "false");
   document.body.classList.add("no-scroll");
+  setLightboxMode("paused");
+  setLightboxItem(index);
+  setLightboxMetaCollapsed(false);
+  updateLightboxMetaWidth();
   elem("lightbox_close").focus();
 }
 
@@ -164,6 +337,7 @@ function closeLightbox() {
   panel.setAttribute("aria-hidden", "true");
   document.body.classList.remove("no-scroll");
   elem("lightbox_image").removeAttribute("src");
+  setLightboxMode("paused");
 
   if (lightboxLastFocus && typeof lightboxLastFocus.focus === "function") {
     lightboxLastFocus.focus();
@@ -429,6 +603,29 @@ async function boot() {
 
   elem("lightbox_close").addEventListener("click", () => {
     closeLightbox();
+  });
+
+  elem("lightbox_meta_toggle").addEventListener("click", () => {
+    setLightboxMetaCollapsed(!lightboxMetaCollapsed);
+  });
+
+  elem("lightbox_prev").addEventListener("click", () => {
+    stepLightbox(-1);
+  });
+
+  elem("lightbox_next").addEventListener("click", () => {
+    stepLightbox(1);
+  });
+
+  elem("lightbox_mode").addEventListener("click", () => {
+    cycleLightboxMode();
+  });
+
+  window.addEventListener("resize", () => {
+    if (elem("lightbox").classList.contains("is-hidden")) {
+      return;
+    }
+    updateLightboxMetaWidth();
   });
 
   document.addEventListener("keydown", (event) => {

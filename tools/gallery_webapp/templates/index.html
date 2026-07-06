@@ -125,6 +125,13 @@
         <img id="lightbox_image" alt="selected image preview">
       </figure>
       <section id="lightbox_meta" class="lightbox-meta">
+        <div class="lightbox-meta-controls">
+          <button id="lightbox_prev" class="lightbox-control-btn" type="button" aria-label="Previous image">&lt;</button>
+          <button id="lightbox_next" class="lightbox-control-btn" type="button" aria-label="Next image">&gt;</button>
+          <button id="lightbox_mode" class="lightbox-control-btn" type="button" aria-label="Autoplay paused" aria-pressed="false" title="Lightbox mode">&#9654;</button>
+          <button id="lightbox_meta_toggle" class="lightbox-icon-btn" type="button" aria-label="Collapse metadata" aria-expanded="true">-</button>
+          <button id="lightbox_close" class="lightbox-icon-btn lightbox-icon-btn--close" type="button" aria-label="Close image preview">x</button>
+        </div>
         <h3 id="lightbox_title">No item selected</h3>
         <p id="lightbox_subtitle">Choose an item to inspect details.</p>
         <dl class="lightbox-facts">
@@ -147,7 +154,6 @@
         </dl>
         <div class="lightbox-actions">
           <a id="lightbox_link" href="#" target="_blank" rel="noreferrer">Open source record</a>
-          <button id="lightbox_close" type="button">Close</button>
         </div>
       </section>
     </div>
