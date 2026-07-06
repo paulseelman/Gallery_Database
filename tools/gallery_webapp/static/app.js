@@ -13,8 +13,103 @@ const ids = [
   "exclude_portraits",
 ];
 
+const VIEW_GALLERY = "gallery";
+const VIEW_MASTER = "master";
+
+let currentItems = [];
+let currentView = VIEW_GALLERY;
+let masterIndex = 0;
+
 function elem(id) {
   return document.getElementById(id);
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function imageReadyItems(items) {
+  return (items || []).filter((item) => item && (item.master_image_url || item.thumbnail_url));
+}
+
+function setView(view) {
+  currentView = view === VIEW_MASTER ? VIEW_MASTER : VIEW_GALLERY;
+
+  elem("gallery_view_btn").classList.toggle("is-active", currentView === VIEW_GALLERY);
+  elem("master_view_btn").classList.toggle("is-active", currentView === VIEW_MASTER);
+
+  elem("results_grid").classList.toggle("is-hidden", currentView !== VIEW_GALLERY);
+  elem("master_view").classList.toggle("is-hidden", currentView !== VIEW_MASTER);
+
+  if (currentView === VIEW_MASTER) {
+    renderMasterView();
+  }
+}
+
+function masterItemPool() {
+  return imageReadyItems(currentItems);
+}
+
+function renderMasterView() {
+  const pool = masterItemPool();
+  const image = elem("master_image");
+  const empty = elem("master_empty");
+
+  if (pool.length === 0) {
+    image.style.display = "none";
+    empty.style.display = "block";
+    elem("master_title").textContent = "No image-ready items";
+    elem("master_subtitle").textContent = "Current search results do not include thumbnail or master images.";
+    elem("master_link").style.visibility = "hidden";
+    elem("master_position").textContent = "0 / 0";
+    elem("master_prev_btn").disabled = true;
+    elem("master_next_btn").disabled = true;
+    return;
+  }
+
+  masterIndex = Math.max(0, Math.min(masterIndex, pool.length - 1));
+  const item = pool[masterIndex];
+  const imageUrl = item.master_image_url || item.thumbnail_url;
+
+  image.src = imageUrl;
+  image.alt = item.title || "master image";
+  image.style.display = "block";
+  empty.style.display = "none";
+
+  elem("master_title").textContent = item.title || "(untitled)";
+  elem("master_subtitle").textContent = `${item.collection || "unknown"} | ${item.date_raw || "n/a"}`;
+
+  const link = elem("master_link");
+  link.href = item.url || "#";
+  link.style.visibility = item.url ? "visible" : "hidden";
+
+  elem("master_position").textContent = `${masterIndex + 1} / ${pool.length}`;
+  elem("master_prev_btn").disabled = pool.length <= 1;
+  elem("master_next_btn").disabled = pool.length <= 1;
+}
+
+function stepMaster(delta) {
+  const pool = masterItemPool();
+  if (pool.length === 0) {
+    return;
+  }
+  masterIndex = (masterIndex + delta + pool.length) % pool.length;
+  renderMasterView();
+}
+
+function openMasterForItem(itemId) {
+  const pool = masterItemPool();
+  const wantedId = String(itemId);
+  const index = pool.findIndex((item) => String(item.item_id) === wantedId);
+  if (index >= 0) {
+    masterIndex = index;
+  }
+  setView(VIEW_MASTER);
 }
 
 function currentFilterFromForm() {
@@ -78,20 +173,41 @@ function renderChips(filter) {
 }
 
 function resultCard(item) {
+  const safeTitle = escapeHtml(item.title || "(untitled)");
+  const safeCollection = escapeHtml(item.collection || "unknown");
+  const safeDate = escapeHtml(item.date_raw || "n/a");
+  const safeUrl = escapeHtml(item.url || "#");
+  const imageSrc = escapeHtml(item.thumbnail_url || "");
+
   const imageTag = item.thumbnail_url
-    ? `<img class="thumb" loading="lazy" src="${item.thumbnail_url}" alt="${item.title}">`
+    ? `<img class="thumb" loading="lazy" src="${imageSrc}" alt="${safeTitle}">`
     : `<div class="thumb"></div>`;
 
   return `
-    <article class="card">
+    <article class="card" data-item-id="${escapeHtml(item.item_id)}">
       ${imageTag}
       <div class="meta">
-        <h3>${item.title || "(untitled)"}</h3>
-        <p>${item.collection || "unknown"} | ${item.date_raw || "n/a"}</p>
-        <a href="${item.url}" target="_blank" rel="noreferrer">open record</a>
+        <h3>${safeTitle}</h3>
+        <p>${safeCollection} | ${safeDate}</p>
+        <a href="${safeUrl}" target="_blank" rel="noreferrer">open record</a>
+        <button class="master-jump" type="button">view master</button>
       </div>
     </article>
   `;
+}
+
+function wireGridEvents() {
+  const cards = elem("results_grid").querySelectorAll(".card");
+  cards.forEach((card) => {
+    const itemId = card.getAttribute("data-item-id");
+    const jump = card.querySelector(".master-jump");
+    if (!jump || !itemId) {
+      return;
+    }
+    jump.addEventListener("click", () => {
+      openMasterForItem(itemId);
+    });
+  });
 }
 
 async function loadFacets() {
@@ -146,14 +262,20 @@ async function applyAndRender(filter) {
 
   renderChips(data.applied_filter || filter);
   elem("result_count").textContent = `${data.count || 0} results shown`;
+  currentItems = data.items || [];
 
   const grid = elem("results_grid");
   if (!data.items || data.items.length === 0) {
     grid.innerHTML = `<p>No results for current filter.</p>`;
+    masterIndex = 0;
+    renderMasterView();
     return;
   }
 
   grid.innerHTML = data.items.map(resultCard).join("\n");
+  wireGridEvents();
+  masterIndex = 0;
+  renderMasterView();
 }
 
 async function loadActiveFilter() {
@@ -218,6 +340,22 @@ async function boot() {
     await applyAndRender(currentFilterFromForm());
   });
 
+  elem("gallery_view_btn").addEventListener("click", () => {
+    setView(VIEW_GALLERY);
+  });
+
+  elem("master_view_btn").addEventListener("click", () => {
+    setView(VIEW_MASTER);
+  });
+
+  elem("master_prev_btn").addEventListener("click", () => {
+    stepMaster(-1);
+  });
+
+  elem("master_next_btn").addEventListener("click", () => {
+    stepMaster(1);
+  });
+
   elem("save_btn").addEventListener("click", async () => {
     await saveActiveFilter();
   });
@@ -231,6 +369,8 @@ async function boot() {
     clearForm();
     await applyAndRender(currentFilterFromForm());
   });
+
+  setView(VIEW_GALLERY);
 }
 
 boot().catch((err) => {

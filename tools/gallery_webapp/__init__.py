@@ -1,1 +1,1 @@
-"""Unified web app (filter control and viewer) for Gallery Manager."""
+"""Unified filter/search web app with gallery and master views for Gallery Manager."""

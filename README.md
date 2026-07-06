@@ -5,7 +5,7 @@ Gallery Manager is a local toolkit for building and managing a metadata-driven i
 The project now uses a tool-oriented structure that supports three major components:
 
 - Database creator and ingestor (current)
-- Combined filter control + slideshow web app (current)
+- Unified filter/search web app with gallery and master image views (current)
 
 ## Project Structure
 
@@ -121,12 +121,6 @@ Open from any device on your LAN:
 http://<your-server-ip>:8080
 ```
 
-Open the slideshow viewer from the same server:
-
-```text
-http://<your-server-ip>:8080/viewer
-```
-
 ### API Endpoints
 
 - `GET /api/filter`
@@ -145,11 +139,10 @@ http://<your-server-ip>:8080/viewer
 
 ## Unified Viewer Notes
 
-The viewer now runs inside the same Flask process as filter control.
+Master image viewing now runs inside the same page as filter control.
 
 - No second service is required.
-- `/viewer` polls local selection APIs and cycles image-ready records.
-- Use `--poll-seconds` and `--slide-seconds` on `webapp.py` to tune slideshow timing.
+- Use the in-page `Gallery` / `Master Image` toggle to switch between multi-result grid and large-image browsing.
 
 ## Migration Note
 
