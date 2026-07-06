@@ -548,7 +548,7 @@ button:hover {
   align-content: start;
   gap: 0.32rem;
   box-shadow: none;
-  width: max(10vw, var(--meta-controls-width, 0px));
+  width: max(15vw, var(--meta-controls-width, 0px));
   min-width: 0;
   max-width: none;
   justify-self: end;
