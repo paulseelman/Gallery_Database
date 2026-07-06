@@ -303,6 +303,31 @@ function renderLightboxControls(poolLength) {
   updateLightboxMetaWidth();
 }
 
+function setLightboxFact(rowId, ddId, value) {
+  const row = elem(rowId);
+  const dd = elem(ddId);
+  if (!row || !dd) {
+    return;
+  }
+
+  let items;
+  if (Array.isArray(value)) {
+    items = value.filter(Boolean);
+  } else {
+    const str = String(value || "").trim();
+    items = str ? [str] : [];
+  }
+
+  if (items.length === 0) {
+    row.hidden = true;
+    dd.textContent = "";
+    return;
+  }
+
+  row.hidden = false;
+  dd.innerHTML = items.map(escapeHtml).join("<br>");
+}
+
 function setLightboxItem(index) {
   const pool = lightboxPool();
   if (pool.length === 0) {
@@ -325,6 +350,15 @@ function setLightboxItem(index) {
   const yearStart = item.year_start == null ? "?" : String(item.year_start);
   const yearEnd = item.year_end == null ? "?" : String(item.year_end);
   elem("lightbox_years").textContent = `${yearStart} - ${yearEnd}`;
+
+  setLightboxFact("lbf_created_row",      "lightbox_created_published", item.created_published);
+  setLightboxFact("lbf_contributors_row", "lightbox_contributors",       item.contributors);
+  setLightboxFact("lbf_medium_row",       "lightbox_medium",             item.medium);
+  setLightboxFact("lbf_subjects_row",     "lightbox_subjects",           item.subjects);
+  setLightboxFact("lbf_notes_row",        "lightbox_notes",              item.notes);
+  setLightboxFact("lbf_call_number_row",  "lightbox_call_number",        item.call_number);
+  setLightboxFact("lbf_rights_row",       "lightbox_rights",             item.rights);
+  setLightboxFact("lbf_language_row",     "lightbox_language",           item.language);
 
   const link = elem("lightbox_link");
   link.href = item.url || "#";
