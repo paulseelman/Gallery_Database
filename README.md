@@ -18,10 +18,6 @@ Gallery_Manager/
       webapp.py
       static/
       templates/
-    filter_control/           # compatibility wrapper -> gallery_webapp
-    client_viewer/
-      viewer.py
-      README.md
   loc_metadata_db.py          # compatibility wrapper
   webapp.py                   # compatibility wrapper
   requirements.txt
@@ -155,7 +151,7 @@ The viewer now runs inside the same Flask process as filter control.
 - `/viewer` polls local selection APIs and cycles image-ready records.
 - Use `--poll-seconds` and `--slide-seconds` on `webapp.py` to tune slideshow timing.
 
-## Compatibility Notes
+## Migration Note
 
-- `tools/filter_control/webapp.py` remains as a forwarding wrapper for legacy commands.
-- `tools/client_viewer/viewer.py` remains as a forwarding wrapper to the unified web app.
+- Legacy compatibility folders (`tools/filter_control` and `tools/client_viewer`) have been removed.
+- Use `webapp.py` or `tools/gallery_webapp/webapp.py` as the only web app entrypoints.

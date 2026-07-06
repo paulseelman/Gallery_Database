@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+## [0.2.2] - 2026-07-05
+### Changed
+- Removed legacy compatibility directories `tools/filter_control` and `tools/client_viewer` after the merged web app transition.
+- Simplified CI checks to only validate canonical entrypoints.
+- Updated README structure and migration notes to reflect the final directory layout.
+
 ## [0.2.1] - 2026-07-05
 ### Changed
 - Renamed the unified app module folder from `tools/filter_control` to `tools/gallery_webapp` for clearer ownership.
@@ -30,6 +36,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 - CLI commands for ingest, stats, and filtered query operations.
 - Project documentation and usage examples.
 
+[0.2.2]: https://github.com/paulseelman/Gallery_Manager/releases/tag/v0.2.2
 [0.2.1]: https://github.com/paulseelman/Gallery_Manager/releases/tag/v0.2.1
 [0.2.0]: https://github.com/paulseelman/Gallery_Manager/releases/tag/v0.2.0
 [0.1.0]: https://github.com/paulseelman/Gallery_Manager/releases/tag/v0.1.0
