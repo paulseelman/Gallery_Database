@@ -256,6 +256,48 @@ def extract_thumbnail(raw_json_text: str) -> str:
     return ""
 
 
+def extract_rich_metadata(raw_json_text: str) -> Dict[str, Any]:
+    """Parse additional display fields from the stored raw JSON blob."""
+    if not raw_json_text:
+        return {}
+    try:
+        payload = json.loads(raw_json_text)
+    except json.JSONDecodeError:
+        return {}
+
+    item = payload.get("item") or {}
+
+    def _str_list(value: Any) -> List[str]:
+        if isinstance(value, list):
+            return [str(v).strip() for v in value if v and str(v).strip()]
+        if isinstance(value, str) and value.strip():
+            return [value.strip()]
+        return []
+
+    # Prefer structured creators list (includes role); fall back to top-level contributor
+    creators: List[str] = []
+    for c in item.get("creators") or []:
+        if isinstance(c, dict):
+            title = str(c.get("title") or "").strip()
+            role = str(c.get("role") or "").strip()
+            if title:
+                creators.append(f"{title} ({role})" if role else title)
+
+    contributors = creators if creators else _str_list(payload.get("contributor"))
+
+    return {
+        "contributors": contributors,
+        "description": _str_list(payload.get("description") or item.get("medium")),
+        "medium": _str_list(item.get("medium")),
+        "subjects": _str_list(item.get("subject_headings") or item.get("subjects")),
+        "notes": _str_list(item.get("notes")),
+        "call_number": str(item.get("call_number") or "").strip(),
+        "rights": str(item.get("rights_information") or "").strip(),
+        "created_published": str(item.get("created_published") or "").strip(),
+        "language": _str_list(payload.get("language")),
+    }
+
+
 def images_base_dir() -> Path:
     configured_root = Path(app.config["IMAGES_ROOT"]).resolve()
     parts = configured_root.parts
@@ -424,6 +466,8 @@ def query_results(filters: Dict[str, Any]) -> Dict[str, Any]:
     items = []
     for row in rows:
         imageset_folder = row["imageset_folder"]
+        raw_json = row["raw_json"]
+        rich_meta = extract_rich_metadata(raw_json)
         items.append(
             {
                 "item_id": row["item_id"],
@@ -435,8 +479,9 @@ def query_results(filters: Dict[str, Any]) -> Dict[str, Any]:
                 "url": row["url"],
                 "json_path": row["json_path"],
                 "imageset_folder": imageset_folder,
-                "thumbnail_url": extract_thumbnail(row["raw_json"]),
+                "thumbnail_url": extract_thumbnail(raw_json),
                 "master_image_url": master_image_url(imageset_folder),
+                **rich_meta,
             }
         )
 
