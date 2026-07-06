@@ -32,6 +32,7 @@ FILTER_KEYS = {
     "limit",
     "shuffle",
     "exclude_portraits",
+    "autoplay_seconds",
 }
 
 
@@ -150,7 +151,15 @@ def default_filter() -> Dict[str, Any]:
         "limit": 60,
         "shuffle": False,
         "exclude_portraits": False,
+        "autoplay_seconds": 5,
     }
+
+
+def _coerce_int(value: Any, fallback: int) -> int:
+    try:
+        return int(str(value).strip())
+    except (TypeError, ValueError, AttributeError):
+        return fallback
 
 
 def normalize_filter(data: Dict[str, Any]) -> Dict[str, Any]:
@@ -164,14 +173,17 @@ def normalize_filter(data: Dict[str, Any]) -> Dict[str, Any]:
             if value in (None, ""):
                 out[key] = None
             else:
-                out[key] = int(value)
+                out[key] = _coerce_int(value, out[key])
         elif key == "limit":
-            limit = int(value or out["limit"])
+            limit = _coerce_int(value, out["limit"])
             out[key] = max(1, min(limit, 500))
         elif key == "shuffle":
             out[key] = bool(value)
         elif key == "exclude_portraits":
             out[key] = bool(value)
+        elif key == "autoplay_seconds":
+            seconds = _coerce_int(value, out["autoplay_seconds"])
+            out[key] = max(1, min(seconds, 31536000))
     return out
 
 

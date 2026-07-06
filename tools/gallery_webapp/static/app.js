@@ -11,6 +11,7 @@ const ids = [
   "limit",
   "shuffle",
   "exclude_portraits",
+  "autoplay_seconds",
 ];
 
 const VIEW_GALLERY = "gallery";
@@ -24,6 +25,7 @@ let lightboxMetaCollapsed = false;
 let lightboxIndex = 0;
 let lightboxAutoplayTimer = null;
 let lightboxMode = "paused";
+let lightboxTimerPopoverOpen = false;
 
 function elem(id) {
   return document.getElementById(id);
@@ -40,6 +42,44 @@ function escapeHtml(value) {
 
 function imageReadyItems(items) {
   return (items || []).filter((item) => item && (item.master_image_url || item.thumbnail_url));
+}
+
+function sanitizeAutoplaySeconds(value) {
+  const parsed = Number.parseInt(String(value ?? "").trim(), 10);
+  if (!Number.isFinite(parsed)) {
+    return 5;
+  }
+  return Math.max(1, Math.min(parsed, 31536000));
+}
+
+function lightboxAutoplayIntervalMs() {
+  return sanitizeAutoplaySeconds(elem("autoplay_seconds").value) * 1000;
+}
+
+function renderLightboxTimerButton() {
+  const button = elem("lightbox_timer");
+  const seconds = sanitizeAutoplaySeconds(elem("autoplay_seconds").value);
+
+  button.textContent = `${seconds}s`;
+  button.setAttribute("aria-label", `Set autoplay timer (${seconds} seconds)`);
+  button.setAttribute("aria-expanded", String(lightboxTimerPopoverOpen));
+}
+
+function setLightboxTimerPopover(open) {
+  lightboxTimerPopoverOpen = Boolean(open);
+
+  const popover = elem("lightbox_timer_popover");
+  const input = elem("autoplay_seconds");
+  popover.classList.toggle("is-hidden", !lightboxTimerPopoverOpen);
+  renderLightboxTimerButton();
+
+  if (!lightboxTimerPopoverOpen) {
+    return;
+  }
+
+  input.value = String(sanitizeAutoplaySeconds(input.value));
+  input.focus();
+  input.select();
 }
 
 function setView(view) {
@@ -178,33 +218,52 @@ function stopLightboxAutoplay() {
   }
 }
 
-function setLightboxMode(mode) {
-  lightboxMode = mode;
+function scheduleLightboxAutoplay(runInitialShuffle) {
   stopLightboxAutoplay();
 
   const pool = lightboxPool();
   if (pool.length <= 1) {
     lightboxMode = "paused";
     renderLightboxModeButton();
+    renderLightboxTimerButton();
     updateLightboxMetaWidth();
     return;
   }
 
+  const intervalMs = lightboxAutoplayIntervalMs();
+
   if (lightboxMode === "autoplay") {
     lightboxAutoplayTimer = window.setInterval(() => {
       stepLightbox(1);
-    }, 2200);
+    }, intervalMs);
   }
 
   if (lightboxMode === "shuffle") {
-    runLightboxShuffle();
+    if (runInitialShuffle) {
+      runLightboxShuffle();
+    }
     lightboxAutoplayTimer = window.setInterval(() => {
       runLightboxShuffle();
-    }, 2200);
+    }, intervalMs);
   }
 
   renderLightboxModeButton();
+  renderLightboxTimerButton();
   updateLightboxMetaWidth();
+}
+
+function setLightboxMode(mode) {
+  lightboxMode = mode;
+  scheduleLightboxAutoplay(true);
+}
+
+function refreshLightboxTimer() {
+  if (lightboxMode === "paused") {
+    renderLightboxTimerButton();
+    return;
+  }
+
+  scheduleLightboxAutoplay(false);
 }
 
 function cycleLightboxMode() {
@@ -245,6 +304,7 @@ function renderLightboxControls(poolLength) {
   next.disabled = !hasItems || lightboxIndex >= poolLength - 1;
 
   renderLightboxModeButton();
+  renderLightboxTimerButton();
   updateLightboxMetaWidth();
 }
 
@@ -296,6 +356,9 @@ function stepLightbox(delta) {
 
 function setLightboxMetaCollapsed(collapsed) {
   lightboxMetaCollapsed = Boolean(collapsed);
+  if (lightboxMetaCollapsed) {
+    setLightboxTimerPopover(false);
+  }
 
   const meta = elem("lightbox_meta");
   const dialog = elem("lightbox_dialog");
@@ -324,6 +387,7 @@ function openLightboxForItem(itemId) {
   panel.classList.remove("is-hidden");
   panel.setAttribute("aria-hidden", "false");
   document.body.classList.add("no-scroll");
+  setLightboxTimerPopover(false);
   setLightboxMode("paused");
   setLightboxItem(index);
   setLightboxMetaCollapsed(false);
@@ -337,6 +401,7 @@ function closeLightbox() {
   panel.setAttribute("aria-hidden", "true");
   document.body.classList.remove("no-scroll");
   elem("lightbox_image").removeAttribute("src");
+  setLightboxTimerPopover(false);
   setLightboxMode("paused");
 
   if (lightboxLastFocus && typeof lightboxLastFocus.focus === "function") {
@@ -359,6 +424,7 @@ function currentFilterFromForm() {
     limit: Number(elem("limit").value || 60),
     shuffle: elem("shuffle").checked,
     exclude_portraits: elem("exclude_portraits").checked,
+    autoplay_seconds: sanitizeAutoplaySeconds(elem("autoplay_seconds").value),
   };
 }
 
@@ -371,8 +437,14 @@ function applyFilterToForm(filter) {
       elem(id).checked = Boolean(filter[id]);
       return;
     }
+    if (id === "autoplay_seconds") {
+      elem(id).value = String(sanitizeAutoplaySeconds(filter[id] ?? 5));
+      return;
+    }
     elem(id).value = filter[id] ?? "";
   });
+
+  renderLightboxTimerButton();
 }
 
 function renderChips(filter) {
@@ -392,15 +464,17 @@ function renderChips(filter) {
     limit: "limit",
     shuffle: "shuffle",
     exclude_portraits: "exclude portraits",
+    autoplay_seconds: "timer",
   };
 
   Object.entries(filter).forEach(([key, value]) => {
     if (value === "" || value === null || value === false) {
       return;
     }
+    const displayValue = key === "autoplay_seconds" ? `${sanitizeAutoplaySeconds(value)}s` : String(value);
     const chip = document.createElement("span");
     chip.className = "chip";
-    chip.textContent = `${labels[key] || key}: ${String(value)}`;
+    chip.textContent = `${labels[key] || key}: ${displayValue}`;
     chips.appendChild(chip);
   });
 }
@@ -538,6 +612,8 @@ async function saveActiveFilter() {
     body: JSON.stringify(payload),
   });
   const data = await res.json();
+  renderChips(data.filter || payload);
+  renderLightboxTimerButton();
   elem("active-meta").textContent = `Active filter last saved: ${data.updated_at}`;
 }
 
@@ -555,6 +631,7 @@ function clearForm() {
     limit: 60,
     shuffle: false,
     exclude_portraits: false,
+    autoplay_seconds: 5,
   });
 }
 
@@ -601,6 +678,29 @@ async function boot() {
     closeLightbox();
   });
 
+  elem("lightbox_timer").addEventListener("click", (event) => {
+    event.stopPropagation();
+    setLightboxTimerPopover(!lightboxTimerPopoverOpen);
+  });
+
+  elem("autoplay_seconds").addEventListener("change", async () => {
+    elem("autoplay_seconds").value = String(sanitizeAutoplaySeconds(elem("autoplay_seconds").value));
+    setLightboxTimerPopover(false);
+    refreshLightboxTimer();
+    await saveActiveFilter();
+  });
+
+  elem("autoplay_seconds").addEventListener("keydown", async (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      elem("autoplay_seconds").dispatchEvent(new Event("change", { bubbles: true }));
+    }
+    if (event.key === "Escape") {
+      event.preventDefault();
+      setLightboxTimerPopover(false);
+    }
+  });
+
   elem("lightbox_close").addEventListener("click", () => {
     closeLightbox();
   });
@@ -619,6 +719,19 @@ async function boot() {
 
   elem("lightbox_mode").addEventListener("click", () => {
     cycleLightboxMode();
+  });
+
+  document.addEventListener("click", (event) => {
+    if (elem("lightbox").classList.contains("is-hidden")) {
+      return;
+    }
+    if (!lightboxTimerPopoverOpen) {
+      return;
+    }
+    if (event.target.closest("#lightbox_timer_wrap")) {
+      return;
+    }
+    setLightboxTimerPopover(false);
   });
 
   window.addEventListener("resize", () => {

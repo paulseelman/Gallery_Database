@@ -581,6 +581,55 @@ button:hover {
   margin-bottom: 0.08rem;
 }
 
+.lightbox-timer-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: flex-start;
+}
+
+.lightbox-timer-popover {
+  position: absolute;
+  top: calc(100% + 0.42rem);
+  left: 0;
+  z-index: 5;
+  width: 10rem;
+  padding: 0.56rem 0.6rem 0.58rem;
+  border: 1px solid rgba(227, 206, 164, 0.22);
+  border-radius: 10px;
+  background: rgba(12, 12, 12, 0.98);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.42);
+}
+
+.lightbox-timer-popover.is-hidden {
+  display: none;
+}
+
+.lightbox-timer-field {
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.3rem;
+  color: #e5e4de;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.64rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.lightbox-timer-field input {
+  width: 100%;
+  border-color: rgba(232, 221, 195, 0.2);
+  background: #1a1a1a;
+  color: #f6f4ef;
+  box-shadow: none;
+}
+
+.lightbox-timer-field input:focus-visible {
+  border-color: rgba(236, 221, 191, 0.56);
+  box-shadow: 0 0 0 2px rgba(236, 221, 191, 0.18);
+}
+
 .lightbox-control-btn {
   width: auto;
   min-width: 0;
