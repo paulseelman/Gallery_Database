@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+## [1.0.0] - 2026-07-06
+### Added
+- Full-screen lightbox for image inspection with a compact metadata rail.
+- Lightbox autoplay timer with configurable interval persisted in filter state.
+- Draggable divider to resize the lightbox metadata panel at runtime.
+- Draggable JSON viewer popup in the lightbox for raw metadata inspection.
+- Enriched lightbox metadata panel surfacing all available JSON fields with stacked link rendering.
+
+### Changed
+- Unified gallery and master-image view into a single page; removed legacy master-image toggle.
+- Removed shuffle toggle and autoplay-timer chip from filter controls (interval now lives in lightbox).
+- Getty-style UI polish: refined typography, spacing, and colour palette across the gallery grid.
+- Widened lightbox metadata rail to 20 vw; matched play-highlight colour to shuffle indicator.
+
 ## [0.2.2] - 2026-07-05
 ### Changed
 - Removed legacy compatibility directories `tools/filter_control` and `tools/client_viewer` after the merged web app transition.
@@ -36,6 +50,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 - CLI commands for ingest, stats, and filtered query operations.
 - Project documentation and usage examples.
 
+[1.0.0]: https://github.com/paulseelman/Gallery_Manager/releases/tag/v1.0.0
 [0.2.2]: https://github.com/paulseelman/Gallery_Manager/releases/tag/v0.2.2
 [0.2.1]: https://github.com/paulseelman/Gallery_Manager/releases/tag/v0.2.1
 [0.2.0]: https://github.com/paulseelman/Gallery_Manager/releases/tag/v0.2.0
