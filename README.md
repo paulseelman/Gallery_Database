@@ -5,8 +5,7 @@ Gallery Manager is a local toolkit for building and managing a metadata-driven i
 The project now uses a tool-oriented structure that supports three major components:
 
 - Database creator and ingestor (current)
-- Filter control web app (current)
-- Client viewer (planned)
+- Combined filter control + slideshow web app (current)
 
 ## Project Structure
 
@@ -124,6 +123,12 @@ Open from any device on your LAN:
 http://<your-server-ip>:8080
 ```
 
+Open the slideshow viewer from the same server:
+
+```text
+http://<your-server-ip>:8080/viewer
+```
+
 ### API Endpoints
 
 - `GET /api/filter`
@@ -133,29 +138,17 @@ http://<your-server-ip>:8080
 - `GET /api/collections`
 - `GET /api/facets`
 - `GET /api/active-selection`
+- `GET /api/selection`
 
 ### Filter Notes
 
 - `Exclude portraits` removes items whose title or metadata terms contain `portrait`.
 - `/api/active-selection` is suitable for polling clients (for example a Raspberry Pi display loop).
 
-## Client Viewer
+## Unified Viewer Notes
 
-An initial client viewer scaffold is now available.
+The viewer now runs inside the same Flask process as filter control.
 
-Run it with:
-
-```bash
-.venv/bin/python tools/client_viewer/viewer.py \
-  --filter-api-base http://127.0.0.1:8080 \
-  --host 0.0.0.0 \
-  --port 8090
-```
-
-Then open:
-
-```text
-http://<your-server-ip>:8090
-```
-
-The viewer polls the active selection API, cycles image-ready records, and shows cached data if the filter-control app is temporarily unavailable.
+- No second service is required.
+- `/viewer` polls local selection APIs and cycles image-ready records.
+- Use `--poll-seconds` and `--slide-seconds` on `webapp.py` to tune slideshow timing.
